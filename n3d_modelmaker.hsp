@@ -1,0 +1,362 @@
+#include "libn3d.hsp"
+
+
+*init
+	screen 0
+	n3d_initialize
+	n3d_setcustomroutine *renderplus
+	screen 1,320,240,0,ginfo_wx2,ginfo_wy1
+	
+	gosub *batch_3d_setaxis
+	gosub *batch_3d_setcameraatdefault
+	
+	await 500
+	gsel 0
+	mouse (ginfo_wx1+ginfo_wx2)/2,(ginfo_wy1+ginfo_wy2)/2 , -1
+	mcx = (ginfo_wx1+ginfo_wx2)/2
+	mcy = (ginfo_wy1+ginfo_wy2)/2
+	dim mhold
+	mhold=1
+	
+	N3D_POLYGON_EDGE=1
+	
+	dim pid
+	ddim x1
+	ddim x2
+	ddim x3
+	ddim y1
+	ddim y2
+	ddim y3
+	ddim z1
+	ddim z2
+	ddim z3
+	sdim c,6
+	c="000000"
+	dim doreflag
+	dim doreprev
+	
+	sdim exportbuf,65536
+	
+	sdim filename,8192
+	filename="export.n3dm
+	gsel 0
+	title getpath(filename,8)
+
+	sdim iol,4096
+	sdim ielem,16,16
+	
+	gosub *construct_toolui
+	gsel 0,1
+*main
+repeat
+	gsel 0
+	redraw 0
+	color 0,0,0
+	boxf
+	color 255,255,255
+	gosub *proc_keymouse
+	gosub *proc_collision
+	gosub *proc_test
+	gosub *proc_toolui
+	gosub *render_game
+	gosub *draw_debug
+	redraw 1
+	await 50
+loop
+stop
+
+*renderplus
+	if onscreen_flag@nastty3d=1{
+		if current_polygon@nastty3d=pid & p_group@nastty3d(pid)=0{
+			font msgothic,12
+			color 255,255,255
+			boxf dx1@nastty3d,dy1@nastty3d,dx1@nastty3d+3,dy1@nastty3d+3
+			color 255,255,255
+			boxf dx2@nastty3d,dy2@nastty3d,dx2@nastty3d+3,dy2@nastty3d+3
+			color 255,255,255
+			boxf dx3@nastty3d,dy3@nastty3d,dx3@nastty3d+3,dy3@nastty3d+3
+			
+			color 255,255,255
+			pos dx1@nastty3d,dy1@nastty3d-12
+			mes strf("(%.2f,%.2f,%.2f)",p_x1@nastty3d(pid),p_y1@nastty3d(pid),p_z1@nastty3d(pid))
+			pos dx2@nastty3d,dy2@nastty3d-12
+			mes strf("(%.2f,%.2f,%.2f)",p_x2@nastty3d(pid),p_y2@nastty3d(pid),p_z1@nastty3d(pid))
+			pos dx3@nastty3d,dy3@nastty3d-12
+			mes strf("(%.2f,%.2f,%.2f)",p_x3@nastty3d(pid),p_y3@nastty3d(pid),p_z1@nastty3d(pid))
+		}
+	}
+	return
+
+*proc_keymouse
+	stick ky,16384+32768+65536+131072
+	newp=CAMERA_PHI-double(ginfo_mx-mcx)/500
+	newt=CAMERA_THETA-double(ginfo_my-mcy)/500
+	if ginfo_act=0{
+		if mhold=1{
+			mouse -1
+			if CAMERA_THETA-double(ginfo_my-mcy)/500<0.0{
+				newt=0.0
+			}else:if CAMERA_THETA-double(ginfo_my-mcy)/500>pi{
+				newt=pi
+			}else{
+			}
+			n3d_setCameraAngle newp,newt,0.0
+			mouse (ginfo_wx1+ginfo_wx2)/2,(ginfo_wy1+ginfo_wy2)/2 , 1
+			mcx = (ginfo_wx1+ginfo_wx2)/2
+			mcy = (ginfo_wy1+ginfo_wy2)/2
+			
+			if ky&128{
+				mhold=0
+				mouse ginfo_mx,ginfo_my,0
+			}
+		}
+	}else{
+		mhold=1
+		mouse ginfo_mx,ginfo_my,0
+	}
+	movespeed=1.0
+	if ginfo_act=0{
+		if (ky&16384) * (ky&32768){
+			movespeed=1.0/sqrt(2)
+		}
+		if (ky&65536) * (ky&131072){
+			movespeed=1.0/sqrt(2)
+		}
+		if (ky&16384) * (ky&32768){
+			movespeed=1.0/sqrt(2)
+		}
+		if (ky&65536) * (ky&131072){
+			movespeed=1.0/sqrt(2)
+		}
+		if ky&256{
+			mhold=1
+		}
+		if ky&16384{
+			n3d_moveCameraPositionVerticallyByAngle movespeed, CAMERA_PHI+pi/2, CAMERA_THETA
+		}
+		if ky&32768{
+			n3d_moveCameraPositionByAngle movespeed, CAMERA_PHI, CAMERA_THETA
+		}
+		if ky&65536{
+			n3d_moveCameraPositionVerticallyByAngle -movespeed, CAMERA_PHI+pi/2, CAMERA_THETA
+		}
+		if ky&131072{
+			n3d_moveCameraPositionByAngle -movespeed, CAMERA_PHI, CAMERA_THETA
+		}
+	}
+	
+	return
+
+*render_game
+	n3d_render
+	return
+*draw_debug
+	n3d_renderinfo
+	return
+*proc_collision
+return
+
+*proc_test
+
+	return
+*proc_toolui
+	if doreflag!=doreprev{
+		if doreflag=0{
+			p_avail@nastty3d(pid)=1
+		}
+	}
+	if doreflag=1{
+		if cnt\20<10{
+			p_avail@nastty3d(pid)=0
+		}else{
+			p_avail@nastty3d(pid)=1
+		}
+	}
+	doreprev=doreflag
+	return
+
+*construct_toolui
+	gsel 1
+	objsize 60,20
+	font msgothic,16
+	
+	pos 0,0
+	color 0,0,0
+	mes "ポリゴンID"
+	pos 128,0
+	input pid
+	pos 256,0
+	button gosub "get",*routine_toolui_get
+	
+	pos 0,20
+	mes "頂点1"
+	pos 64,30
+	input x1
+	pos 128,30
+	input y1
+	pos 192,30
+	input z1
+
+	pos 0,60
+	mes "頂点2"
+	pos 64,60
+	input x2
+	pos 128,60
+	input y2
+	pos 192,60
+	input z2
+
+	pos 0,90
+	mes "頂点3"
+	pos 64,90
+	input x3
+	pos 128,90
+	input y3
+	pos 192,90
+	input z3
+	
+	pos 0,120
+	mes "色"
+	pos 64,120
+	input c
+	pos 256,150
+	button gosub "set",*routine_toolui_set
+	
+	pos 1,150
+	chkbox "どれ?",doreflag
+	
+	objsize 96,20
+	pos 64,150
+	button gosub "空きID",*routine_toolui_vacantid
+	
+	pos 0,180
+	button gosub "出力",*routine_toolui_export
+	
+	pos 128,180
+	chkbox "ポリゴン輪郭",N3D_POLYGON_EDGE
+	
+	pos 0,210
+	button gosub "ロード",*routine_toolui_load
+	
+	gsel 0
+	return
+*routine_toolui_get
+	//303～が使える
+	gsel 1
+	objprm 2 ,p_x1@nastty3d(pid)
+	objprm 3 ,p_y1@nastty3d(pid)
+	objprm 4 ,p_z1@nastty3d(pid)
+	
+	objprm 5 ,p_x2@nastty3d(pid)
+	objprm 6 ,p_y2@nastty3d(pid)
+	objprm 7 ,p_z2@nastty3d(pid)
+	
+	objprm 8 ,p_x3@nastty3d(pid)
+	objprm 9 ,p_y3@nastty3d(pid)
+	objprm 10,p_z3@nastty3d(pid)
+	
+	objprm 11,strf("%.6X",p_col@nastty3d(pid))
+	gsel 0
+	return
+*routine_toolui_set
+	//303～が使える
+	p_avail@nastty3d(pid)=1
+	p_group@nastty3d(pid)=0
+	
+	p_x1@nastty3d(pid)=x1
+	p_y1@nastty3d(pid)=y1
+	p_z1@nastty3d(pid)=z1
+	
+	p_x2@nastty3d(pid)=x2
+	p_y2@nastty3d(pid)=y2
+	p_z2@nastty3d(pid)=z2
+	
+	p_x3@nastty3d(pid)=x3
+	p_y3@nastty3d(pid)=y3
+	p_z3@nastty3d(pid)=z3
+	
+	p_col@nastty3d(pid)=int("$"+c)
+	
+	return
+
+*routine_toolui_vacantid
+	repeat p_count@nastty3d
+		if p_avail@nastty3d(cnt)=0{
+			gsel 1
+			objprm 0,cnt
+			gsel 1
+			break
+		}
+	loop
+	return
+*routine_toolui_load
+	dialog "n3dm",16
+	if stat=0{
+		return
+	}
+	exist refstr
+	if strsize=-1{
+		return
+	}
+	filename=refstr
+	exportbuf=""
+	bload filename,exportbuf,strsize
+	gosub *batch_3d_setaxis
+	gosub *batch_3d_setcameraatdefault
+	notesel exportbuf
+	repeat notemax
+		ppcnt=cnt+303
+		noteget iol,cnt
+		split iol," ",ielem
+		p_avail@nastty3d(ppcnt)=1
+		p_group@nastty3d(ppcnt)=0
+		
+		p_x1@nastty3d(ppcnt)=double(ielem(1))
+		p_y1@nastty3d(ppcnt)=double(ielem(2))
+		p_z1@nastty3d(ppcnt)=double(ielem(3))
+		
+		p_x2@nastty3d(ppcnt)=double(ielem(4))
+		p_y2@nastty3d(ppcnt)=double(ielem(5))
+		p_z2@nastty3d(ppcnt)=double(ielem(6))
+		
+		p_x3@nastty3d(ppcnt)=double(ielem(7))
+		p_y3@nastty3d(ppcnt)=double(ielem(8))
+		p_z3@nastty3d(ppcnt)=double(ielem(9))
+		
+		p_col@nastty3d(ppcnt)=int(ielem(0))
+	loop
+	gsel 0
+	title getpath(filename,8)
+	gsel 1
+	objprm 0,303
+	return
+
+*routine_toolui_export
+	exportbuf=""
+	repeat p_count@nastty3d
+		if p_avail@nastty3d(cnt)=1{
+			if p_group@nastty3d(cnt)=0{
+				exportbuf+=""+p_col@nastty3d(cnt)+" "+p_x1@nastty3d(cnt)+" "+p_y1@nastty3d(cnt)+" "+p_z1@nastty3d(cnt)+" "+p_x2@nastty3d(cnt)+" "+p_y2@nastty3d(cnt)+" "+p_z2@nastty3d(cnt)+" "+p_x3@nastty3d(cnt)+" "+p_y3@nastty3d(cnt)+" "+p_z3@nastty3d(cnt)+"\n"
+			}
+		}
+	loop
+	dialog exportbuf
+	bsave filename,exportbuf,strlen(exportbuf)+1
+	return
+*batch_3d_setaxis
+	repeat 100
+		ncnt=cnt*2-100
+		//x軸
+		n3d_setpolygon 15, $FF0000, ncnt,0,0 ,ncnt+4,0,0 ,ncnt+2,0,0
+		n3d_setpolygon 15, $00FF00, 0,ncnt,0 ,0,ncnt+4,0 ,0,ncnt+2,0
+		n3d_setpolygon 15, $0000FF, 0,0,ncnt ,0,0,ncnt+4 ,0,0,ncnt+2
+	loop
+	ncnt=100*2-100
+	n3d_setpolygon 15, $FF0000, ncnt+8,0,0 ,ncnt,0,8 ,ncnt,0,-8
+	n3d_setpolygon 15, $00FF00, 0,ncnt+8,0 ,8,ncnt,0 ,-8,ncnt,0
+	n3d_setpolygon 15, $0000FF, 0,0,ncnt+8 ,0,8,ncnt ,0,-8,ncnt
+	return
+*batch_3d_setcameraatdefault
+	n3d_setCameraPosition 12.0,12.0,-12.0
+	n3d_setCameraAngle pi*2*225/360, pi*2*60/360 , 0.0
+	return

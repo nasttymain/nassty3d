@@ -1,0 +1,317 @@
+//-----------------------------------------------------------------------------------------------------------------------------
+#module modtriangle
+	#deffunc trianglef int x1,int y1,int x2,int y2,int x3,int y3
+		triangle x1,y1,x2,y2,x3,y3
+		dim x,4
+		dim y,4
+		x(0)=x1,x2,x3,x3
+		y(0)=y1,y2,y3,y3
+		gsquare -1,x,y
+	return 0
+	#deffunc triangle int x1,int y1,int x2,int y2,int x3,int y3
+		line x1,y1,x2,y2
+		line x2,y2,x3,y3
+		line x3,y3,x1,y1
+	return 0
+#global
+#define global pi 3.1415926535898
+//-----------------------------------------------------------------------------------------------------------------------------
+#module nastty3d
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_initialize
+		//レンダリング先画面に関する情報
+		dim rsel
+		rsel=0
+		dim rsizex
+		rsizex=640
+		dim rsizey
+		rsizey=480
+		//カメラに関する情報。カメラは座標と、向きは球座標系で処理する
+		ddim c_xpos
+		ddim c_ypos
+		ddim c_zpos
+		#define global CAMERA_XPOS c_xpos@nastty3d
+		#define global CAMERA_YPOS c_ypos@nastty3d
+		#define global CAMERA_ZPOS c_zpos@nastty3d
+		ddim c_sightp
+		#define global CAMERA_PHI c_sightp@nastty3d
+		ddim c_sightt
+		#define global CAMERA_THETA c_sightt@nastty3d
+		ddim c_sightr
+		//ポリゴンに関する情報。(テクスチャなしの生ポリ)
+		dim p_count
+		p_count=8192
+		dim  p_avail	,p_count
+		dim  p_group	,p_count
+		dim  p_col		,p_count
+		ddim p_x1		,p_count
+		ddim p_y1		,p_count
+		ddim p_z1		,p_count
+		ddim p_x2		,p_count
+		ddim p_y2		,p_count
+		ddim p_z2		,p_count
+		ddim p_x3		,p_count
+		ddim p_y3		,p_count
+		ddim p_z3		,p_count
+		
+		ddim povv
+		povv=20.0
+		
+		dim polyedge
+		polyedge=0
+		
+		dim pzsort		,p_count
+		
+		dim tstamp
+		tstamp=gettime(6)*1000+gettime(7)
+		dim info_polygoncount
+		
+		ldim customroutine
+		customroutine=*blanksub@nastty3d
+		dim onscreen_flag
+		dim current_polygon
+		
+		
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+*blanksub
+	return
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_setCameraPosition double x, double y, double z
+		c_xpos=double(x)
+		c_ypos=double(y)
+		c_zpos=double(z)
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_moveCameraPositionByAngle double r, double phi, double theta
+		c_xpos+= r * sin(theta)*cos(phi)
+		c_ypos+= r * sin(theta)*sin(phi)
+		c_zpos+= r * cos(theta)
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_moveCameraPositionVerticallyByAngle double r, double phi, double theta
+		c_xpos+= r * sin(pi/2)*cos(phi)
+		c_ypos+= r * sin(pi/2)*sin(phi)
+		//c_zpos+= r * cos(theta)
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_setCameraAngle double phi, double theta, double rotation
+		c_sightt=( theta + pi*2 ) \ (pi*2)
+		c_sightp=( phi + pi*2 ) \ (pi*2)
+		c_sightr=rotation
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#define ctype INRANGE(%1,%2,%3) (%2<=%1 & %1<=%3)
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_render
+		
+		info_polygoncount=0
+		//カメラアングル情報から投影面に対する法線ベクトルを求める。
+		//(カメラ座標) = (nsx,nsy,nsz)
+		//(法線ベクトル) = (nsx,nsy,nsz)+t(nvx,nvy,nvz) (tは任意の実数)
+		//(平面方程式) = (nvx)x+(nvy)y+(nvz)z+d=0
+		nsx=c_xpos
+		nsy=c_ypos
+		nsz=c_zpos
+		nvx=sin(c_sightt)*cos(c_sightp) * 0.1
+		nvy=sin(c_sightt)*sin(c_sightp) * 0.1
+		nvz=cos(c_sightt)               * 0.1
+		
+		//投影面の軸をx'軸、y'軸とおき、そのベクトルを求める。
+		//現段階では回転について考慮しないので、y'軸はz一定軸。
+		//x'はtheta一定軸(rとphiが変化する)で、y'はphi一定(rとthetaが変化する)軸。
+		//x'
+		//(原点)  =  (nsx,nsy,nsz)+(nvx,nvy,nvz)
+		//(x軸ベクトル) = (原点)+t(xdx,xdy,xdz)
+		//(y軸ベクトル) = (原点)+t(ydx,ydy,ydz)
+		xdx=-1.0*cos(pi/2+c_sightp)
+		xdy=-1.0*sin(pi/2+c_sightp)
+		xdz=0.0
+
+		ydx=0.0
+		ydy=0.0
+		ydz=sin(pi-c_sightt)
+		//h: sqrt(x^2+y^2)
+		ydh=cos(pi-c_sightt)
+		//ydhu: 長さ1のy'軸向きベクトルに関するsqrt(x^2+y^2)の長さをルートしたもの。ydhの長さからydx、ydyの長さを求めるのに使う
+		ydhu=sqrt(1-ydz*ydz)
+		if ydhu=0.0{
+			//theta=0のときに発生する。y軸がz軸に垂直
+		}else{
+			ydx=1.0*cos(c_sightp)*(ydh/ydhu)
+			ydy=1.0*sin(c_sightp)*(ydh/ydhu)
+		}
+		
+		//前後関係の判定。前処理として、カメラとポリゴンとの距離を測定
+		repeat length(p_avail)
+			if p_avail(cnt)=0{
+				pzsort(cnt)=65536.0
+				continue
+			}
+			pvx1=(p_x1(cnt)-nsx)
+			pvy1=(p_y1(cnt)-nsy)
+			pvz1=(p_z1(cnt)-nsz)
+			pvx2=(p_x2(cnt)-nsx)
+			pvy2=(p_y2(cnt)-nsy)
+			pvz2=(p_z2(cnt)-nsz)
+			pvx3=(p_x3(cnt)-nsx)
+			pvy3=(p_y3(cnt)-nsy)
+			pvz3=(p_z3(cnt)-nsz)
+
+			pzsort(cnt)=( sqrt(pvx1*pvx1+pvy1*pvy1+pvz1*pvz1) + sqrt(pvx2*pvx2+pvy2*pvy2+pvz2*pvz2) + sqrt(pvx3*pvx3+pvy3*pvy3+pvz3*pvz3) )/3
+		loop
+		sortval pzsort,1
+		
+		repeat length(p_avail)
+			sortget ncnt,cnt
+			//ncnt=cnt
+			if p_avail(ncnt)=1{
+				//(カメラから点へのベクトル) = (nsx,nsy,nsz) + (pvx,pvy,pvz)
+				//カメラからの距離: pvl
+				//ct: カメラからポリゴンの中点(pcx,pcy,pcz)と、法線との成す角の余弦 cos(theta)
+				wr=1
+				
+				pvx1=(p_x1(ncnt)-nsx)
+				pvy1=(p_y1(ncnt)-nsy)
+				pvz1=(p_z1(ncnt)-nsz)
+				if (pvx1*nvx+pvy1*nvy+pvz1*nvz)=0.0{
+					pvl1=0.0
+				}else{
+					pvl1=1.0/(pvx1*nvx+pvy1*nvy+pvz1*nvz)
+				}
+				jxd1=pvx1*xdx+pvy1*xdy+pvz1*xdz
+				jyd1=pvx1*ydx+pvy1*ydy+pvz1*ydz
+				iv1=(pvx1*nvx+pvy1*nvy+pvz1*nvz)
+				
+				pvx2=(p_x2(ncnt)-nsx)
+				pvy2=(p_y2(ncnt)-nsy)
+				pvz2=(p_z2(ncnt)-nsz)
+				if (pvx2*nvx+pvy2*nvy+pvz2*nvz)=0.0{
+					pvl2=0.0
+				}else{
+					pvl2=1.0/(pvx2*nvx+pvy2*nvy+pvz2*nvz)
+				}
+				jxd2=pvx2*xdx+pvy2*xdy+pvz2*xdz
+				jyd2=pvx2*ydx+pvy2*ydy+pvz2*ydz
+				iv2=(pvx2*nvx+pvy2*nvy+pvz2*nvz)
+				
+				pvx3=(p_x3(ncnt)-nsx)
+				pvy3=(p_y3(ncnt)-nsy)
+				pvz3=(p_z3(ncnt)-nsz)
+				if (pvx3*nvx+pvy3*nvy+pvz3*nvz)=0.0{
+					pvl3=0.0
+				}else{
+					pvl3=1.0/(pvx3*nvx+pvy3*nvy+pvz3*nvz)
+				}
+				jxd3=pvx3*xdx+pvy3*xdy+pvz3*xdz
+				jyd3=pvx3*ydx+pvy3*ydy+pvz3*ydz
+				iv3=(pvx3*nvx+pvy3*nvy+pvz3*nvz)
+				
+				
+				pcx=(pvx1+pvx2+pvx3)/3
+				pcy=(pvy1+pvy2+pvy3)/3
+				pcz=(pvz1+pvz2+pvz3)/3
+				if sqrt(nvx*nvx+nvy*nvy+nvz*nvz)*sqrt(pcx*pcx+pcy*pcy+pcz*pcz)!=0.0{
+					ct=(nvx*pcx+nvy*pcy+nvz*pcz) / (sqrt(nvx*nvx+nvy*nvy+nvz*nvz)*sqrt(pcx*pcx+pcy*pcy+pcz*pcz))
+				}else{
+					ct=pi
+				}
+				
+				//描画点: dx1,dy1,dx2,dy2,dx3,dy3
+				dx1=double(rsizex)/2+jxd1*povv*pvl1
+				dy1=double(rsizey)/2+jyd1*povv*pvl1
+				dx2=double(rsizex)/2+jxd2*povv*pvl2
+				dy2=double(rsizey)/2+jyd2*povv*pvl2
+				dx3=double(rsizex)/2+jxd3*povv*pvl3
+				dy3=double(rsizey)/2+jyd3*povv*pvl3
+				
+				onscreen_flag=0
+				if ct>=0.0 & INRANGE(dx1,-rsizex,2*rsizex) & INRANGE(dx2,-rsizex,2*rsizex) & INRANGE(dx3,-rsizex,2*rsizex) & INRANGE(dy1,-rsizey,2*rsizey) & INRANGE(dy2,-rsizey,2*rsizey) & INRANGE(dy3,-rsizey,2*rsizey){
+					if iv1*iv2<=0.0 | iv1*iv3<0.0 | iv2*iv3<0.0{
+						//logmes "面切 "+cnt
+					}else{
+						onscreen_flag=1
+						rgbcolor p_col(ncnt)
+						trianglef dx1,dy1,dx2,dy2,dx3,dy3
+						if polyedge=1 & p_group(ncnt)!=15{
+							rgbcolor 16777215
+							triangle dx1,dy1,dx2,dy2,dx3,dy3
+						}
+						info_polygoncount++
+					}
+				}
+				current_polygon=ncnt
+				gosub customroutine
+			}
+		loop
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_setcustomroutine label cr
+		customroutine=cr
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_renderinfo
+		font msgothic,12
+		color 255,128,128
+		pos 0,0
+		mes "CAM"
+		color 255,255,255
+		pos 32,0
+		mes strf("角度 %3d , %3d",c_sightp*360/pi/2,c_sightt*360/pi/2)
+		pos 128,0
+		mes strf("座標( %.2f, %.2f , %.2f)",c_xpos,c_ypos,c_zpos)
+		pos 320,0
+		mes strf("法線(%.2f , %.2f , %.2f)",nvx,nvy,nvz)
+		pos 32,12
+		mes strf("x'軸(%.2f , %.2f , %.2f)",xdx,xdy,xdz)
+		pos 192,12
+		mes strf("y'軸(%.2f , %.2f , %.2f)",ydx,ydy,ydz)
+		
+		pos 0,24
+		color 255,128,128
+		mes "FRAME"
+		color 255,255,255
+		pos 32,24
+		mes strf("間隔 %3dms", (gettime(6)*1000+gettime(7)-tstamp+60000)\60000)
+		tstamp=gettime(6)*1000+gettime(7)
+		pos 128,24
+		mes strf("ポリ数 %4d", info_polygoncount)
+		/*pos 0+32,12
+		mes strf("ydh %.1f",ydh)
+		pos 64+32,12
+		mes strf("ydhu %.1f",ydhu)*/
+		
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_setPolygon int group, int pcolor, double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3
+		repeat length(p_avail)
+			if p_avail(cnt)=0{
+				p_avail(cnt)=1
+				p_group(cnt)=group
+				p_col(cnt)=pcolor
+				p_x1(cnt)=double(x1)
+				p_y1(cnt)=double(y1)
+				p_z1(cnt)=double(z1)
+				p_x2(cnt)=double(x2)
+				p_y2(cnt)=double(y2)
+				p_z2(cnt)=double(z2)
+				p_x3(cnt)=double(x3)
+				p_y3(cnt)=double(y3)
+				p_z3(cnt)=double(z3)
+				break
+			}
+		loop
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_deleteByGroup int group
+		repeat length(p_avail)
+			if p_avail(cnt)!=0 & p_group(cnt)=group{
+				p_avail(cnt)=0
+			}
+		loop
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#define global N3D_POLYGON_EDGE polyedge@nastty3d
+//-----------------------------------------------------------------------------------------------------------------------------
+#global
+//-----------------------------------------------------------------------------------------------------------------------------
