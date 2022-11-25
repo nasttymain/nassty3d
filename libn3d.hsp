@@ -55,7 +55,7 @@
 		ddim p_z3		,p_count
 		
 		ddim povv
-		povv=20.0
+		povv=30.0
 		
 		dim polyedge
 		polyedge=0

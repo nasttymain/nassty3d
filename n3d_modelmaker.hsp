@@ -80,9 +80,9 @@ stop
 			pos dx1@nastty3d,dy1@nastty3d-12
 			mes strf("(%.2f,%.2f,%.2f)",p_x1@nastty3d(pid),p_y1@nastty3d(pid),p_z1@nastty3d(pid))
 			pos dx2@nastty3d,dy2@nastty3d-12
-			mes strf("(%.2f,%.2f,%.2f)",p_x2@nastty3d(pid),p_y2@nastty3d(pid),p_z1@nastty3d(pid))
+			mes strf("(%.2f,%.2f,%.2f)",p_x2@nastty3d(pid),p_y2@nastty3d(pid),p_z2@nastty3d(pid))
 			pos dx3@nastty3d,dy3@nastty3d-12
-			mes strf("(%.2f,%.2f,%.2f)",p_x3@nastty3d(pid),p_y3@nastty3d(pid),p_z1@nastty3d(pid))
+			mes strf("(%.2f,%.2f,%.2f)",p_x3@nastty3d(pid),p_y3@nastty3d(pid),p_z3@nastty3d(pid))
 		}
 	}
 	return
