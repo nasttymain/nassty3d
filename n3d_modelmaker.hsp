@@ -301,6 +301,7 @@ return
 	filename=refstr
 	exportbuf=""
 	bload filename,exportbuf,strsize
+	n3d_deleteall
 	gosub *batch_3d_setaxis
 	gosub *batch_3d_setcameraatdefault
 	notesel exportbuf
