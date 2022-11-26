@@ -342,7 +342,7 @@ return
 		}
 	loop
 	dialog exportbuf
-	bsave filename,exportbuf,strlen(exportbuf)+1
+	bsave filename,exportbuf,strlen(exportbuf)
 	return
 *batch_3d_setaxis
 	repeat 100
