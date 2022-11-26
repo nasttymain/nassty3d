@@ -323,3 +323,41 @@
 //-----------------------------------------------------------------------------------------------------------------------------
 #global
 //-----------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
+#module n3dm
+//-----------------------------------------------------------------------------------------------------------------------------
+#deffunc n3dm_initialize
+	sdim src,131072
+	sdim ol,65536
+	sdim elem,16,16
+return 0
+#deffunc n3dm_setModel str modeldata, int group, double xposition, double yposition, double zposition, double xrotation, double yrotation, double zrotation
+	//xrotation: xå≈íËÅAy:zâ¬ïœ
+	n3d_deleteByGroup group
+	src=modeldata
+	notesel src
+	repeat notemax
+		noteget ol,cnt
+		split ol," ",elem
+		//n3d_setPolygon group, int(elem(0)), double(elem(1))+xposition, double(elem(2))+yposition, double(elem(3))+zposition, double(elem(4))+xposition, double(elem(5))+yposition, double(elem(6))+zposition, double(elem(7))+xposition, double(elem(8))+yposition, double(elem(9))+zposition
+		x1=double(elem(1))+xposition
+		y1=double(elem(2))*cos(xrotation)-double(elem(3))*sin(xrotation)+yposition
+		z1=double(elem(2))*sin(xrotation)+double(elem(3))*cos(xrotation)+zposition
+		x2=double(elem(4))+xposition
+		y2=double(elem(5))*cos(xrotation)-double(elem(6))*sin(xrotation)+yposition
+		z2=double(elem(5))*sin(xrotation)+double(elem(6))*cos(xrotation)+zposition
+		x3=double(elem(7))+xposition
+		y3=double(elem(8))*cos(xrotation)-double(elem(9))*sin(xrotation)+yposition
+		z3=double(elem(8))*sin(xrotation)+double(elem(9))*cos(xrotation)+zposition
+		n3d_setPolygon group, int(elem(0)), x1, y1, z1, x2, y2, z2, x3, y3, z3
+	loop
+return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+#global
+//-----------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------
