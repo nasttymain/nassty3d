@@ -67,7 +67,7 @@ stop
 
 *renderplus
 	if onscreen_flag@nastty3d=1{
-		if current_polygon@nastty3d=pid & p_group@nastty3d(pid)=0{
+		if current_polygon@nastty3d=pid & p_group@nastty3d(pid)=0 & N3D_POLYGON_EDGE=1{
 			font msgothic,12
 			color 255,255,255
 			boxf dx1@nastty3d,dy1@nastty3d,dx1@nastty3d+3,dy1@nastty3d+3
