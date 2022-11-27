@@ -9,7 +9,7 @@
 	bload "testplane.n3dm",testplane
 	
 	n3d_setCameraPosition -48.0, 0.0, -24.0
-	n3d_setCameraAngle 0.0, pi/3,0.0
+	n3d_setCameraAngle 0.0, pi*0.3,0.0
 	
 	x=0.0
 	y=0.0
@@ -61,7 +61,8 @@
 				}
 			loop
 		}
-		n3dm_setModel testplane, 1, -y, -x, 0.0, xr, 0.0, 0.0
+		n3dm_setModel testplane, 1, -y, -x, 0.0
+		n3d_rotateXByGroup 1, 0.0, -x, 0.0, xr
 		
 		n3d_deleteByGroup 2
 		repeat 64
