@@ -48,7 +48,7 @@
 				if bul_avail(cnt)=0{
 					bul_avail(cnt)=1
 					bul_x(cnt)=x-5
-					bul_y(cnt)=y+5
+					bul_y(cnt)=y+15
 					break
 				}
 			loop
@@ -56,7 +56,7 @@
 				if bul_avail(cnt)=0{
 					bul_avail(cnt)=1
 					bul_x(cnt)=x+5
-					bul_y(cnt)=y+6
+					bul_y(cnt)=y+15
 					break
 				}
 			loop
@@ -67,7 +67,7 @@
 		n3d_deleteByGroup 2
 		repeat 64
 			if bul_avail(cnt)=1{
-				bul_y(cnt)-=10
+				bul_y(cnt)-=15
 				n3d_setPolygon 2,16777215, -bul_y(cnt),-bul_x(cnt)-0.2,0.0, -bul_y(cnt)+20,-bul_x(cnt),0.0, -bul_y(cnt),-bul_x(cnt)+0.2,0.0
 				if bul_y(cnt)<-500{
 					bul_avail(cnt)=0
