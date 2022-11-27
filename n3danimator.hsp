@@ -1,0 +1,46 @@
+#include "libn3d.hsp"
+*init
+	screen 0,640,480
+	title "n3d animation"
+	
+	//0: リアルタイム画面出力(プレビュー)、 1: 画像出力
+	dim out_type
+	out_type=0
+	
+	dim framerate
+	framerate=30
+	
+	dim framecount
+	framecount=0
+	
+	//ここまでシークしてから再生開始する
+	dim startframe
+	startframe=0
+	
+*start
+	
+	await 500
+*main0
+	gosub *seektostart
+	repeat
+		redraw 0
+		color 0,0,0
+		boxf
+		
+		gosub *render
+		redraw 1
+		await 1000/framerate
+	loop
+	
+	
+*seektostart
+	
+	return
+*render
+	framecount++
+	n3d_render
+	n3d_renderinfo
+	font msgothic,12
+	pos 640-40,0
+	mes strf("%6d",framecount)
+	return
