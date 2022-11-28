@@ -17,6 +17,22 @@
 	dim startframe
 	startframe=0
 	
+	#define FRAME framecount@
+	
+
+	dim  model_avail,256
+	dim  model_id,256
+	ddim model_x,256
+	ddim model_y,256
+	ddim model_z,256
+	ddim model_xs,256
+	ddim model_ys,256
+	ddim model_zs,256
+	ddim model_xr,256
+	ddim model_yr,256
+	ddim model_zr,256
+	
+	
 *start
 	
 	await 500
@@ -42,5 +58,5 @@
 	n3d_renderinfo
 	font msgothic,12
 	pos 640-40,0
-	mes strf("%6d",framecount)
+	mes strf("%6d",FRAME)
 	return
