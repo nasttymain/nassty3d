@@ -62,7 +62,7 @@
 			loop
 		}
 		n3dm_setModel testplane, 1, -y, -x, 0.0
-		n3d_rotateXByGroup 1, 0.0, -x, 0.0, xr
+		n3d_rotateXByGroup 1, -y, -x, 0.0, xr
 		
 		n3d_deleteByGroup 2
 		repeat 64

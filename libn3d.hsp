@@ -342,6 +342,52 @@
 		loop
 	return 0
 //-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_rotateYByGroup int group, double std_x, double std_y, double std_z, double rotation
+		repeat length(p_avail)
+			if p_avail(cnt)=1{
+				if p_group(cnt)=group{
+					
+					p_nx1=(p_x1(cnt)-std_x)*cos(rotation) - (p_z1(cnt)-std_z)*sin(rotation) + std_x
+					p_nz1=(p_x1(cnt)-std_x)*sin(rotation) + (p_z1(cnt)-std_z)*cos(rotation) + std_z
+					p_nx2=(p_x2(cnt)-std_x)*cos(rotation) - (p_z2(cnt)-std_z)*sin(rotation) + std_x
+					p_nz2=(p_x2(cnt)-std_x)*sin(rotation) + (p_z2(cnt)-std_z)*cos(rotation) + std_z
+					p_nx3=(p_x3(cnt)-std_x)*cos(rotation) - (p_z3(cnt)-std_z)*sin(rotation) + std_x
+					p_nz3=(p_x3(cnt)-std_x)*sin(rotation) + (p_z3(cnt)-std_z)*cos(rotation) + std_z
+					
+					p_x1(cnt)=p_nx1
+					p_z1(cnt)=p_nz1
+					p_x2(cnt)=p_nx2
+					p_z2(cnt)=p_nz2
+					p_x3(cnt)=p_nx3
+					p_z3(cnt)=p_nz3
+				}
+			}
+		loop
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_rotateZByGroup int group, double std_x, double std_y, double std_z, double rotation
+		repeat length(p_avail)
+			if p_avail(cnt)=1{
+				if p_group(cnt)=group{
+					
+					p_nx1=(p_x1(cnt)-std_x)*cos(rotation) - (p_y1(cnt)-std_y)*sin(rotation) + std_x
+					p_ny1=(p_x1(cnt)-std_x)*sin(rotation) + (p_y1(cnt)-std_y)*cos(rotation) + std_y
+					p_nx2=(p_x2(cnt)-std_x)*cos(rotation) - (p_y2(cnt)-std_y)*sin(rotation) + std_x
+					p_ny2=(p_x2(cnt)-std_x)*sin(rotation) + (p_y2(cnt)-std_y)*cos(rotation) + std_y
+					p_nx3=(p_x3(cnt)-std_x)*cos(rotation) - (p_y3(cnt)-std_y)*sin(rotation) + std_x
+					p_ny3=(p_x3(cnt)-std_x)*sin(rotation) + (p_y3(cnt)-std_y)*cos(rotation) + std_y
+					
+					p_x1(cnt)=p_nx1
+					p_y1(cnt)=p_ny1
+					p_x2(cnt)=p_nx2
+					p_y2(cnt)=p_ny2
+					p_x3(cnt)=p_nx3
+					p_y3(cnt)=p_ny3
+				}
+			}
+		loop
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
 	#define global N3D_POLYGON_EDGE polyedge@nastty3d
 //-----------------------------------------------------------------------------------------------------------------------------
 #global
