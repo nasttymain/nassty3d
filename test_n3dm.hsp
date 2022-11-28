@@ -32,6 +32,7 @@
 		}
 		if ky&2{
 			y-=1.6
+			yr=0.2
 		}
 		if ky&4{
 			x+=1.6
@@ -39,9 +40,13 @@
 		}
 		if ky&8{
 			y+=1.6
+			yr=-0.2
 		}
 		if (ky&1)/1 = (ky&4)/4{
 			xr=0.0
+		}
+		if (ky&2)/2 = (ky&8)/8{
+			yr=0.0
 		}
 		if (ky&2048)=2048 & cnt\4=0{
 			repeat 64
@@ -63,6 +68,7 @@
 		}
 		n3dm_setModel testplane, 1, -y, -x, 0.0
 		n3d_rotateXByGroup 1, -y, -x, 0.0, xr
+		n3d_rotateYByGroup 1, -y, -x, 0.0, yr
 		
 		n3d_deleteByGroup 2
 		repeat 64
