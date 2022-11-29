@@ -75,7 +75,7 @@
 			if bul_avail(cnt)=1{
 				bul_y(cnt)-=15
 				n3d_setPolygon 2,16777215, -bul_y(cnt),-bul_x(cnt)-0.2,0.0, -bul_y(cnt)+20,-bul_x(cnt),0.0, -bul_y(cnt),-bul_x(cnt)+0.2,0.0
-				if bul_y(cnt)<-500{
+				if bul_y(cnt)<-700{
 					bul_avail(cnt)=0
 				}
 			}
