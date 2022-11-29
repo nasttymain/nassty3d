@@ -7,6 +7,8 @@
 	
 	sdim testplane,65536
 	bload "testplane.n3dm",testplane
+	sdim laser,65536
+	bload "laser.n3dm",laser
 	
 	n3d_setCameraPosition -48.0, 0.0, -24.0
 	n3d_setCameraAngle 0.0, pi*0.3,0.0
@@ -24,6 +26,7 @@
 		color 0,0,0
 		boxf
 		color 255,255,255
+		n3d_deleteall
 		
 		stick ky,15+2048
 		if ky&1{
@@ -74,7 +77,7 @@
 		repeat 64
 			if bul_avail(cnt)=1{
 				bul_y(cnt)-=15
-				n3d_setPolygon 2,16777215, -bul_y(cnt),-bul_x(cnt)-0.2,0.0, -bul_y(cnt)+20,-bul_x(cnt),0.0, -bul_y(cnt),-bul_x(cnt)+0.2,0.0
+				n3dm_setModel laser, 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, 0.0
 				if bul_y(cnt)<-700{
 					bul_avail(cnt)=0
 				}
