@@ -5,7 +5,8 @@
 	screen 0
 	n3d_initialize
 	n3d_setcustomroutine *renderplus
-	screen 1,320,240,0,ginfo_wx2,ginfo_wy1
+	screen 1,320,240,SCREEN_TOOL,ginfo_wx2,ginfo_wy1
+	title "Vertex Editor"
 	
 	gosub *batch_3d_setaxis
 	gosub *batch_3d_setcameraatdefault
@@ -40,7 +41,7 @@
 	sdim filename,8192
 	filename="export.n3dm
 	gsel 0
-	title getpath(filename,8)
+	title "n3d ModelMaker - "+getpath(filename,8)
 
 	sdim iol,4096
 	sdim ielem,16,16
@@ -327,7 +328,7 @@ return
 		p_col@nastty3d(ppcnt)=int(ielem(0))
 	loop
 	gsel 0
-	title getpath(filename,8)
+	title "n3d ModelMaker - "+getpath(filename,8)
 	gsel 1
 	objprm 0,303
 	return
