@@ -7,6 +7,9 @@
 	n3d_setcustomroutine *renderplus
 	screen 1,320,240,SCREEN_TOOL,ginfo_wx2,ginfo_wy1
 	title "Vertex Editor"
+	screen 2,320,240,SCREEN_TOOL,ginfo_wx1,ginfo_wy2
+	title "Script"
+	
 	
 	gosub *batch_3d_setaxis
 	gosub *batch_3d_setcameraatdefault
@@ -46,7 +49,14 @@
 	sdim iol,4096
 	sdim ielem,16,16
 	
+	dim scrnum
+	sdim scrlist,65536
+	scrlist="立方体"
+	sdim scrparam,4096
+	sdim screlem,256,256
+	
 	gosub *construct_toolui
+	gosub *construct_scriptui
 	gsel 0,1
 *main
 repeat
@@ -240,6 +250,37 @@ return
 	button gosub "ロード",*routine_toolui_load
 	
 	gsel 0
+	return
+*construct_scriptui
+	gsel 2
+	objsize 60,20
+	font msgothic,16
+	
+	pos 0,0
+	color 0,0,0
+	mes "スクリプト"
+	pos 128,0
+	objsize 120,20
+	combox scrnum,,scrlist
+	
+	pos 0,30
+	mes "パラメータ"
+	pos 128,30
+	objsize 120,20
+	input scrparam
+	
+	pos 128,90
+	objsize 120,20
+	button gosub "実行",*routine_scriptui_run
+	
+	gsel 0
+	return
+*routine_scriptui_run
+	split scrparam," ",screlem
+	if scrnum=0{
+		//立方体
+		
+	}
 	return
 *routine_toolui_get
 	//303～が使える
