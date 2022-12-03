@@ -250,6 +250,9 @@ return
 	pos 0,210
 	button gosub "ロード",*routine_toolui_load
 	
+	pos 192,210
+	button gosub "ポリ無効化",*routine_toolui_disable
+	
 	gsel 0
 	return
 *construct_scriptui
@@ -337,6 +340,9 @@ return
 	
 	objprm 11,strf("%.6X",p_col@nastty3d(pid))
 	gsel 0
+	return
+*routine_toolui_disable
+	p_avail@nastty3d(pid)=0
 	return
 *routine_toolui_set
 	//303～が使える
