@@ -51,9 +51,10 @@
 	
 	dim scrnum
 	sdim scrlist,65536
-	scrlist="óßï˚ëÃ"
+	scrlist="óßï˚ëÃ(é≤ïΩçs)"
 	sdim scrparam,4096
 	sdim screlem,256,256
+	ddim screlemd,256
 	
 	gosub *construct_toolui
 	gosub *construct_scriptui
@@ -277,9 +278,46 @@ return
 	return
 *routine_scriptui_run
 	split scrparam," ",screlem
+	np=stat
+	repeat length(screlemd)
+		screlemd(cnt)=double(screlem(cnt))
+	loop
 	if scrnum=0{
-		//óßï˚ëÃ
+		if np!=6{
+			return
+		}
+		//óßï˚ëÃ(é≤ïΩçs)
+		si=-1
+		sn=0
+		/*repeat p_count@nastty3d
+			if p_avail@nastty3d(cnt)=0{
+				sn++
+			}else{
+				sn=0
+			}
+			if sn=12{
+				si=cnt-11
+				break
+			}
+		loop
+		if si=-1{
+			return
+		}*/
+		//n3d_setPolygon int group, int pcolor, double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3
+		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(1), screlemd(2),  screlemd(3), screlemd(1), screlemd(2),  screlemd(0), screlemd(4), screlemd(2)
+		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(4), screlemd(2),  screlemd(3), screlemd(1), screlemd(2),  screlemd(0), screlemd(4), screlemd(2)
+		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(1), screlemd(5),  screlemd(3), screlemd(1), screlemd(5),  screlemd(0), screlemd(4), screlemd(5)
+		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(4), screlemd(5),  screlemd(3), screlemd(1), screlemd(5),  screlemd(0), screlemd(4), screlemd(5)
 		
+		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(1), screlemd(2),  screlemd(3), screlemd(1), screlemd(2),  screlemd(0), screlemd(1), screlemd(5)
+		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(1), screlemd(5),  screlemd(3), screlemd(1), screlemd(2),  screlemd(0), screlemd(1), screlemd(5)
+		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(4), screlemd(2),  screlemd(3), screlemd(4), screlemd(2),  screlemd(0), screlemd(4), screlemd(5)
+		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(4), screlemd(5),  screlemd(3), screlemd(4), screlemd(2),  screlemd(0), screlemd(4), screlemd(5)
+		
+		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(1), screlemd(2),  screlemd(0), screlemd(1), screlemd(5),  screlemd(0), screlemd(4), screlemd(2)
+		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(4), screlemd(5),  screlemd(0), screlemd(1), screlemd(5),  screlemd(0), screlemd(4), screlemd(2)
+		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(1), screlemd(2),  screlemd(3), screlemd(1), screlemd(5),  screlemd(3), screlemd(4), screlemd(2)
+		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(4), screlemd(5),  screlemd(3), screlemd(1), screlemd(5),  screlemd(3), screlemd(4), screlemd(2)
 	}
 	return
 *routine_toolui_get
