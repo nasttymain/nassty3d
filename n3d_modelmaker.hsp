@@ -1,5 +1,5 @@
 #include "libn3d.hsp"
-
+#include "hspext.as"
 
 *init
 	screen 0
@@ -51,10 +51,15 @@
 	
 	dim scrnum
 	sdim scrlist,65536
-	scrlist="óßï˚ëÃ(é≤ïΩçs)"
+	chdir "scripts/"
+	dirlist scrlist,"*.*",3
+	chdir "../"
+	sdim scrfname,4096
 	sdim scrparam,4096
 	sdim screlem,256,256
 	ddim screlemd,256
+	sdim scrbuf,65536
+	sdim scrline,4096
 	
 	gosub *construct_toolui
 	gosub *construct_scriptui
@@ -280,48 +285,35 @@ return
 	gsel 0
 	return
 *routine_scriptui_run
+	repeat
+		strrep scrparam,"  "," "
+		if stat=0:break
+	loop
 	split scrparam," ",screlem
 	np=stat
 	repeat length(screlemd)
 		screlemd(cnt)=double(screlem(cnt))
 	loop
-	if scrnum=0{
-		if np!=6{
-			return
+	notesel scrlist
+	noteget scrfname,scrnum
+
+	pipeexec scrbuf,"python \"scripts/"+scrfname+"\" "+scrparam,1
+	
+	repeat
+		pipeget scrline
+		if stat=0{
+			//exit
+			break
 		}
-		//óßï˚ëÃ(é≤ïΩçs)
-		si=-1
-		sn=0
-		/*repeat p_count@nastty3d
-			if p_avail@nastty3d(cnt)=0{
-				sn++
-			}else{
-				sn=0
-			}
-			if sn=12{
-				si=cnt-11
-				break
-			}
-		loop
-		if si=-1{
-			return
-		}*/
-		//n3d_setPolygon int group, int pcolor, double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3
-		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(1), screlemd(2),  screlemd(3), screlemd(1), screlemd(2),  screlemd(0), screlemd(4), screlemd(2)
-		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(4), screlemd(2),  screlemd(3), screlemd(1), screlemd(2),  screlemd(0), screlemd(4), screlemd(2)
-		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(1), screlemd(5),  screlemd(3), screlemd(1), screlemd(5),  screlemd(0), screlemd(4), screlemd(5)
-		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(4), screlemd(5),  screlemd(3), screlemd(1), screlemd(5),  screlemd(0), screlemd(4), screlemd(5)
-		
-		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(1), screlemd(2),  screlemd(3), screlemd(1), screlemd(2),  screlemd(0), screlemd(1), screlemd(5)
-		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(1), screlemd(5),  screlemd(3), screlemd(1), screlemd(2),  screlemd(0), screlemd(1), screlemd(5)
-		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(4), screlemd(2),  screlemd(3), screlemd(4), screlemd(2),  screlemd(0), screlemd(4), screlemd(5)
-		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(4), screlemd(5),  screlemd(3), screlemd(4), screlemd(2),  screlemd(0), screlemd(4), screlemd(5)
-		
-		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(1), screlemd(2),  screlemd(0), screlemd(1), screlemd(5),  screlemd(0), screlemd(4), screlemd(2)
-		n3d_setPolygon 0, int("$"+c), screlemd(0), screlemd(4), screlemd(5),  screlemd(0), screlemd(1), screlemd(5),  screlemd(0), screlemd(4), screlemd(2)
-		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(1), screlemd(2),  screlemd(3), screlemd(1), screlemd(5),  screlemd(3), screlemd(4), screlemd(2)
-		n3d_setPolygon 0, int("$"+c), screlemd(3), screlemd(4), screlemd(5),  screlemd(3), screlemd(1), screlemd(5),  screlemd(3), screlemd(4), screlemd(2)
-	}
+		if stat=2{
+			//stdout
+		}
+		if stat=3{
+			//stderr
+		}
+	loop
+	dialog scrbuf
+	
 	return
 *routine_toolui_get
 	//303Å`Ç™égÇ¶ÇÈ
