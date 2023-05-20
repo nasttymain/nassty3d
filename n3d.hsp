@@ -105,6 +105,8 @@ stop
 
 *render_game
 	n3d_render
+	pos 0,0
+	gzoom 640, 480, 0, 0, 0, 320, 240, 0
 	/*color 0,0,0
 	boxf 0,0,640,64
 	boxf 0,416,640,480

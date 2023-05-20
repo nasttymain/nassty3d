@@ -85,6 +85,8 @@
 		loop
 		
 		n3d_render
+//		pos 0,0
+//		gzoom 640, 480, 0, 0, 0, 320, 240, 0
 		n3d_renderinfo
 		
 		redraw 1

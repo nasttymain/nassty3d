@@ -26,6 +26,9 @@
 		rsizex=640
 		dim rsizey
 		rsizey=480
+		//640x480基準の倍率を指定
+		ddim rscale
+		rscale = limitf(double(rsizex)/640, double(rsizey)/480)
 		//カメラに関する情報。カメラは座標と、向きは球座標系で処理する
 		ddim c_xpos
 		ddim c_ypos
@@ -218,12 +221,12 @@
 				}
 				
 				//描画点: dx1,dy1,dx2,dy2,dx3,dy3
-				dx1=double(rsizex)/2+jxd1*povv*pvl1
-				dy1=double(rsizey)/2+jyd1*povv*pvl1
-				dx2=double(rsizex)/2+jxd2*povv*pvl2
-				dy2=double(rsizey)/2+jyd2*povv*pvl2
-				dx3=double(rsizex)/2+jxd3*povv*pvl3
-				dy3=double(rsizey)/2+jyd3*povv*pvl3
+				dx1=double(rsizex)/2+jxd1*povv*pvl1 * rscale
+				dy1=double(rsizey)/2+jyd1*povv*pvl1 * rscale
+				dx2=double(rsizex)/2+jxd2*povv*pvl2 * rscale
+				dy2=double(rsizey)/2+jyd2*povv*pvl2 * rscale
+				dx3=double(rsizex)/2+jxd3*povv*pvl3 * rscale
+				dy3=double(rsizey)/2+jyd3*povv*pvl3 * rscale
 				
 				onscreen_flag=0
 				if ct>=0.0 & INRANGE(dx1,-rsizex,2*rsizex) & INRANGE(dx2,-rsizex,2*rsizex) & INRANGE(dx3,-rsizex,2*rsizex) & INRANGE(dy1,-rsizey,2*rsizey) & INRANGE(dy2,-rsizey,2*rsizey) & INRANGE(dy3,-rsizey,2*rsizey){
