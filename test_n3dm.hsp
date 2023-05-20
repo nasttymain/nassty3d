@@ -56,7 +56,7 @@
 				if bul_avail(cnt)=0{
 					bul_avail(cnt)=1
 					bul_x(cnt)=x-5
-					bul_y(cnt)=y+15
+					bul_y(cnt)=y+15+rnd(4)
 					break
 				}
 			loop
@@ -64,7 +64,7 @@
 				if bul_avail(cnt)=0{
 					bul_avail(cnt)=1
 					bul_x(cnt)=x+5
-					bul_y(cnt)=y+15
+					bul_y(cnt)=y+15+rnd(4)
 					break
 				}
 			loop
