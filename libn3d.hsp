@@ -89,7 +89,7 @@
 		dim onscreen_flag
 		dim current_polygon
 		
-		#define CLOSEST_DISTANCE 0.1
+		#define CLOSEST_DISTANCE 0.0
 		
 		
 	return 0
@@ -284,11 +284,6 @@
 						//logmes "–ÊØ "+cnt
 //					}else{
 				if SIGN(psd1) = 1 and SIGN(psd2) = 1 and SIGN(psd3) = 1 and tooclose = 0{
-						if abs(dx1 - dx2) > 640 or abs(dx2 - dx3) > 640 or abs(dx1 - dx3) > 640 and p_group(ncnt) = 512{
-							//logmes "WARN "+p_group(ncnt)
-							//logmes "" + dx1 + " " + dx2 + " " + dx3
-							//logmes "" + dy1 + " " + dy2 + " " + dy3
-						}
 						onscreen_flag=1
 						rgbcolor p_col(ncnt)
 						trianglef dx1,dy1,dx2,dy2,dx3,dy3
@@ -303,7 +298,7 @@
 					if SIGN(psd1) = -1 and SIGN(psd2) = -1 and SIGN(psd3) = -1{
 						//logmes "Š®‘S‚É— –Ê"
 					}else{
-						/*tooclose12 = 0
+						tooclose12 = 0
 						tooclose13 = 0
 						tooclose23 = 0
 						//logmes "ˆê•”— –Ê"
@@ -314,19 +309,9 @@
 						pse2 = sqrt( ( SQUARE(p_x2(ncnt) - nsx - nvx) + SQUARE(p_y2(ncnt) - nsy - nvy) + SQUARE(p_z2(ncnt) - nsz - nvz) ) - SQUARE(psd2) )
 						pse3 = sqrt( ( SQUARE(p_x3(ncnt) - nsx - nvx) + SQUARE(p_y3(ncnt) - nsy - nvy) + SQUARE(p_z3(ncnt) - nsz - nvz) ) - SQUARE(psd3) )
 						
-						if       SIGN(psd1) = 1 and SIGN(psd2) = -1 {
-							o_x12 = p_x1(ncnt) + (p_x2(ncnt) - p_x1(ncnt)) * (pse1 - CLOSEST_DISTANCE) / (pse1 + pse2)
-							o_y12 = p_y1(ncnt) + (p_y2(ncnt) - p_y1(ncnt)) * (pse1 - CLOSEST_DISTANCE) / (pse1 + pse2)
-							o_z12 = p_z1(ncnt) + (p_z2(ncnt) - p_z1(ncnt)) * (pse1 - CLOSEST_DISTANCE) / (pse1 + pse2)
-						}else:if SIGN(psd1) = 1 and SIGN(psd2) = -1 {
-							o_x12 = p_x1(ncnt) + (p_x2(ncnt) - p_x1(ncnt)) * pse1 / (pse1 + pse2)
-							o_y12 = p_y1(ncnt) + (p_y2(ncnt) - p_y1(ncnt)) * pse1 / (pse1 + pse2)
-							o_z12 = p_z1(ncnt) + (p_z2(ncnt) - p_z1(ncnt)) * pse1 / (pse1 + pse2)
-						}else{
-							o_x12 = p_x1(ncnt) + (p_x2(ncnt) - p_x1(ncnt)) * pse1 / (pse1 + pse2)
-							o_y12 = p_y1(ncnt) + (p_y2(ncnt) - p_y1(ncnt)) * pse1 / (pse1 + pse2)
-							o_z12 = p_z1(ncnt) + (p_z2(ncnt) - p_z1(ncnt)) * pse1 / (pse1 + pse2)
-						}
+						o_x12 = p_x1(ncnt) + (p_x2(ncnt) - p_x1(ncnt)) * pse1 / (pse1 + pse2)
+						o_y12 = p_y1(ncnt) + (p_y2(ncnt) - p_y1(ncnt)) * pse1 / (pse1 + pse2)
+						o_z12 = p_z1(ncnt) + (p_z2(ncnt) - p_z1(ncnt)) * pse1 / (pse1 + pse2)
 						
 						ovx12=(o_x12-nsx)
 						ovy12=(o_y12-nsy)
