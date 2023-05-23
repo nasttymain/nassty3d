@@ -23,12 +23,12 @@
 		dim rsel
 		rsel=0
 		dim rsizex
-		rsizex=640
+		rsizex=800
 		dim rsizey
-		rsizey=480
+		rsizey=800
 		//640x480基準の倍率を指定
 		ddim rscale
-		rscale = limitf(double(rsizex)/640, double(rsizey)/480)
+		rscale = 1.0//limitf(double(rsizex)/640, double(rsizey)/640)
 		//カメラに関する情報。カメラは座標と、向きは球座標系で処理する
 		ddim c_xpos
 		ddim c_ypos
@@ -86,6 +86,20 @@
 		c_xpos=double(x)
 		c_ypos=double(y)
 		c_zpos=double(z)
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_setCameraAngleByLookingAt double x, double y, double z
+		if (x - c_xpos) * (x - c_xpos) + (y - c_ypos) * (y - c_ypos) = 0.0{
+			dxy = 0.0
+		}else{
+			dxy = sqrt((x - c_xpos) * (x - c_xpos) + (y - c_ypos) * (y - c_ypos))
+		}
+		if (x - c_xpos) * (x - c_xpos) + (y - c_ypos) * (y - c_ypos) + (z - c_zpos) * (z - c_zpos) = 0.0{
+			dxyz = 0.0
+		}else{
+			dxyz = sqrt((x - c_xpos) * (x - c_xpos) + (y - c_ypos) * (y - c_ypos) + (z - c_zpos) * (z - c_zpos))
+		}
+		n3d_setCameraAngle atan(y - c_ypos, x - c_xpos), pi / 2 - atan(z - c_zpos, dxy), c_sightr
 	return 0
 //-----------------------------------------------------------------------------------------------------------------------------
 	#deffunc n3d_moveCameraPositionByAngle double r, double phi, double theta
@@ -269,7 +283,7 @@
 					if SIGN(psd1) = -1 and SIGN(psd2) = -1 and SIGN(psd3) = -1{
 						//logmes "完全に裏面"
 					}else{
-						tooclose12 = 0
+						/*tooclose12 = 0
 						tooclose13 = 0
 						tooclose23 = 0
 						//logmes "一部裏面"
@@ -321,7 +335,7 @@
 						ovx13=(o_x13-nsx)
 						ovy13=(o_y13-nsy)
 						ovz13=(o_z13-nsz)
-						logmes (ovx13*nvx+ovy13*nvy+ovz13*nvz)
+						//logmes (ovx13*nvx+ovy13*nvy+ovz13*nvz)
 						if (ovx13*nvx+ovy13*nvy+ovz13*nvz)<=CLOSEST_DISTANCE{
 							ovl13=0.0
 							tooclose13 = 1
