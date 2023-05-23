@@ -56,7 +56,8 @@
 	ddim fs, 128
 	dim flt, 128
 	
-	
+	dim airplane_speed
+	airplane_speed = 6
 	
 *main
 	repeat
@@ -92,6 +93,7 @@
 		if ky & 128{
 			break
 		}
+//		if camtime=60:stop
 	loop
 end
 stop
@@ -195,7 +197,7 @@ stop
 		}
 		if camtime >= 40 and camtime <= 40 + 60{
 			enem_avail = 1
-			enem_y = 768
+			enem_y = 512
 			sectime = camtime - 40
 			n3d_setCameraPosition 32.0 * cos(deg2rad(sectime * 3))- 16.0, 32.0 * sin(deg2rad(sectime * 3)) + 0.0, 2.0 - (sectime) * 18 / 60
 			n3d_setCameraAngleByLookingAt 0.0, 0.0, 0.0
@@ -214,9 +216,9 @@ stop
 		lcnt = cnt - 20
 		n3d_setpolygon 256, $888888, -36.0, 16.0 * lcnt, 0.0,  1024.0, 16.0 * lcnt, 0.0,  -36.0, 16.0 * lcnt, 0.0
 	loop
-	axistimer = (axistimer + 4) \ 16
+	axistimer = (axistimer + airplane_speed) \ 16
 	repeat 80
-		lcnt = cnt - 4
+		lcnt = cnt - 20
 		n3d_setpolygon 256, $888888, 16.0 * lcnt - axistimer, -128.0, 0.0,  16.0 * lcnt - axistimer, 128.0, 0.0,  16.0 * lcnt - axistimer, 128.0, 0.0
 	loop
 	return
@@ -224,7 +226,7 @@ stop
 *proc_enemy
 	if enem_avail = 1{
 		n3dm_setModel whitebox, 512, enem_y, 0, 0.0
-		enem_y -= 4
+		enem_y -= airplane_speed
 	}
 	if enem_avail = 1{
 		repeat length(bul_avail)

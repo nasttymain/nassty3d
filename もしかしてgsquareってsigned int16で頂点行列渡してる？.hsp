@@ -1,0 +1,20 @@
+//-29117.054479 -25900.170051 -37025.616843
+
+//826.506313 784.454173 220.701870
+#module
+	#deffunc trianglef int x1,int y1,int x2,int y2,int x3,int y3
+		//triangle x1,y1,x2,y2,x3,y3
+		if initialized = 0{
+			//_modt_init
+		}
+		dim x, 4
+		dim y,4
+		x(0)=x3, x2, x1, x1
+		y(0)=y3, y2, y1, y1
+		gsquare -1,x,y
+	return
+#global
+screen 0, 800, 800
+rgbcolor 0
+//trianglef -29117.054479, 826.506313, -25900.170051,784.454173, -37025.616843, 220.701870
+trianglef 10, 80, -13000, 70, -32000, 220

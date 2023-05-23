@@ -94,7 +94,7 @@ stop
 			newt=pi
 		}else{
 		}
-		//n3d_setCameraAngle newp,newt,0.0
+		n3d_setCameraAngle newp,newt,0.0
 		mouse (ginfo_wx1+ginfo_wx2)/2,(ginfo_wy1+ginfo_wy2)/2 , 1
 	}
 	movespeed=1.0
@@ -184,6 +184,6 @@ return
 		n3d_rotateYByGroup 10 + cnt, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
 		
 	loop//*/
-	n3d_setCameraPosition 96.0 - cnt,6.0,12.0
-	n3d_setCameraAngleByLookingAt 0.0, 0.0, 0.0
+	//n3d_setCameraPosition 96.0 - cnt,6.0,12.0
+	//n3d_setCameraAngleByLookingAt 0.0, 0.0, 0.0
 	return
