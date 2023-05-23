@@ -3,7 +3,7 @@
 *init
 	n3d_initialize
 	
-	repeat 7,-3
+/*	repeat 7,-3
 	xcnt=cnt*20
 	repeat 7,-3
 	ycnt=cnt*20
@@ -32,16 +32,34 @@
 	loop
 	loop
 	loop
-	
-	
+*/
+	//n3d_setpolygon 10, $FFFFFF, 5.0,5.0,5.0, -5.0, 5.0, 5.0, 5.0, -5.0, 5.0
 	
 	n3d_setCameraPosition 12.0,12.0,-6.0
-	n3d_setCameraAngle pi, pi/2 , 0.0
+	n3d_setCameraAngle pi * 4 / 3, pi/3 , 0.0
 	await 500
 	gsel 0
 	mouse (ginfo_wx1+ginfo_wx2)/2,(ginfo_wy1+ginfo_wy2)/2 , -1
 	mcx = (ginfo_wx1+ginfo_wx2)/2
 	mcy = (ginfo_wy1+ginfo_wy2)/2
+	
+	ddim fx, 8
+	ddim fy, 8
+	ddim fz, 8
+	ddim fxs, 8
+	ddim fys, 8
+	ddim fzs, 8
+	ddim ft, 8
+	ddim fp, 8
+	ddim fts, 8
+	ddim fps, 8
+	repeat 8
+		fxs(cnt) = double(rnd(21) - 10)/40
+		fys(cnt) = double(rnd(21) - 10)/40
+		fzs(cnt) = double(rnd(21) - 10)/40
+		fts(cnt) = double(rnd(11) - 5) / 100
+		fps(cnt) = double(rnd(11) - 5) / 100
+	loop
 *main
 repeat
 	redraw 0
@@ -106,7 +124,7 @@ stop
 *render_game
 	n3d_render
 	pos 0,0
-	gzoom 640, 480, 0, 0, 0, 320, 240, 0
+//	gzoom 640, 480, 0, 0, 0, 320, 240, 0
 	/*color 0,0,0
 	boxf 0,0,640,64
 	boxf 0,416,640,480
@@ -147,4 +165,19 @@ return
 	n3d_setpolygon 10, $888888, 5,5.0+double(cnt)/30,-5 , -5,5.0+double(cnt)/30,-5 , 5,-5.0+double(cnt)/30,-5
 	n3d_setpolygon 10, $888888, -5,-5.0+double(cnt)/30,-5 , -5,5.0+double(cnt)/30,-5 ,5,-5.0+double(cnt)/30,-5
 */
+	repeat 8
+		fx(cnt) += fxs(cnt)
+		fy(cnt) += fys(cnt)
+		fz(cnt) += fzs(cnt)
+		ft(cnt) += fts(cnt)
+		fp(cnt) += fps(cnt)
+		
+		n3d_deleteByGroup 10 + cnt
+		
+		n3d_setpolygon 10 + cnt, $FFFFFF, fx(cnt), fy(cnt), fz(cnt),  fx(cnt) - 2, fy(cnt), fz(cnt),  fx(cnt), fy(cnt) - sqrt(3), fz(cnt) - sqrt(3)
+		n3d_rotateXByGroup 10 + cnt, fx(cnt), fy(cnt), fz(cnt),ft(cnt)
+		n3d_rotateYByGroup 10 + cnt, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
+		
+	loop
+	
 	return

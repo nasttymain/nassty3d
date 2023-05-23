@@ -74,6 +74,8 @@
 		dim onscreen_flag
 		dim current_polygon
 		
+		#define CLOSEST_DISTANCE 0.1
+		
 		
 	return 0
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -169,6 +171,7 @@
 			sortget ncnt,cnt
 			//ncnt=cnt
 			if p_avail(ncnt)=1{
+				tooclose = 0
 				//(カメラから点へのベクトル) = (nsx,nsy,nsz) + (pvx,pvy,pvz)
 				//カメラからの距離: pvl
 				//ct: カメラからポリゴンの中点(pcx,pcy,pcz)と、法線との成す角の余弦 cos(theta)
@@ -177,34 +180,48 @@
 				pvx1=(p_x1(ncnt)-nsx)
 				pvy1=(p_y1(ncnt)-nsy)
 				pvz1=(p_z1(ncnt)-nsz)
-				if (pvx1*nvx+pvy1*nvy+pvz1*nvz)=0.0{
+				if (pvx1*nvx+pvy1*nvy+pvz1*nvz)<=CLOSEST_DISTANCE{
 					pvl1=0.0
+					tooclose = 1
 				}else{
-					pvl1=1.0/(pvx1*nvx+pvy1*nvy+pvz1*nvz)
+					pvl1=1.0/absf(pvx1*nvx+pvy1*nvy+pvz1*nvz)
+					//pvl1=2.0/(pvx1*nvx+pvy1*nvy+pvz1*nvz + 10)
 				}
 				jxd1=pvx1*xdx+pvy1*xdy+pvz1*xdz
 				jyd1=pvx1*ydx+pvy1*ydy+pvz1*ydz
 				iv1=(pvx1*nvx+pvy1*nvy+pvz1*nvz)
 				
+				dx1=double(rsizex)/2+jxd1*povv*pvl1 * rscale
+				dy1=double(rsizey)/2+jyd1*povv*pvl1 * rscale
+				
+				
 				pvx2=(p_x2(ncnt)-nsx)
 				pvy2=(p_y2(ncnt)-nsy)
 				pvz2=(p_z2(ncnt)-nsz)
-				if (pvx2*nvx+pvy2*nvy+pvz2*nvz)=0.0{
+				if (pvx2*nvx+pvy2*nvy+pvz2*nvz)<=CLOSEST_DISTANCE{
 					pvl2=0.0
+					tooclose = 1
 				}else{
-					pvl2=1.0/(pvx2*nvx+pvy2*nvy+pvz2*nvz)
+					pvl2=1.0/absf(pvx2*nvx+pvy2*nvy+pvz2*nvz)
+					//pvl2=2.0/(pvx2*nvx+pvy2*nvy+pvz2*nvz + 10)
 				}
 				jxd2=pvx2*xdx+pvy2*xdy+pvz2*xdz
 				jyd2=pvx2*ydx+pvy2*ydy+pvz2*ydz
 				iv2=(pvx2*nvx+pvy2*nvy+pvz2*nvz)
 				
+				dx2=double(rsizex)/2+jxd2*povv*pvl2 * rscale
+				dy2=double(rsizey)/2+jyd2*povv*pvl2 * rscale
+				
+				
 				pvx3=(p_x3(ncnt)-nsx)
 				pvy3=(p_y3(ncnt)-nsy)
 				pvz3=(p_z3(ncnt)-nsz)
-				if (pvx3*nvx+pvy3*nvy+pvz3*nvz)=0.0{
+				if (pvx3*nvx+pvy3*nvy+pvz3*nvz)<=CLOSEST_DISTANCE{
 					pvl3=0.0
+					tooclose = 1
 				}else{
-					pvl3=1.0/(pvx3*nvx+pvy3*nvy+pvz3*nvz)
+					pvl3=1.0/absf(pvx3*nvx+pvy3*nvy+pvz3*nvz)
+					//pvl3=2.0/(pvx3*nvx+pvy3*nvy+pvz3*nvz + 10)
 				}
 				jxd3=pvx3*xdx+pvy3*xdy+pvz3*xdz
 				jyd3=pvx3*ydx+pvy3*ydy+pvz3*ydz
@@ -221,18 +238,23 @@
 				}
 				
 				//描画点: dx1,dy1,dx2,dy2,dx3,dy3
-				dx1=double(rsizex)/2+jxd1*povv*pvl1 * rscale
-				dy1=double(rsizey)/2+jyd1*povv*pvl1 * rscale
-				dx2=double(rsizex)/2+jxd2*povv*pvl2 * rscale
-				dy2=double(rsizey)/2+jyd2*povv*pvl2 * rscale
 				dx3=double(rsizex)/2+jxd3*povv*pvl3 * rscale
 				dy3=double(rsizey)/2+jyd3*povv*pvl3 * rscale
 				
 				onscreen_flag=0
-				if ct>=0.0 & INRANGE(dx1,-rsizex,2*rsizex) & INRANGE(dx2,-rsizex,2*rsizex) & INRANGE(dx3,-rsizex,2*rsizex) & INRANGE(dy1,-rsizey,2*rsizey) & INRANGE(dy2,-rsizey,2*rsizey) & INRANGE(dy3,-rsizey,2*rsizey){
-					if iv1*iv2<=0.0 | iv1*iv3<0.0 | iv2*iv3<0.0{
+				
+				//psd1～3: 各頂点が投影面の裏にあるか表にあるかを判定。(投影面の原点-頂点) * (法線ベクトル)。
+				#define ctype SIGN(%1) (((%1)>0) - ((%1)<0)) 
+				psd1 = (p_x1(ncnt) - nsx - nvx) * nvx + (p_y1(ncnt) - nsy - nvy) * nvy + (p_z1(ncnt) - nsz - nvz) * nvz
+				psd2 = (p_x2(ncnt) - nsx - nvx) * nvx + (p_y2(ncnt) - nsy - nvy) * nvy + (p_z2(ncnt) - nsz - nvz) * nvz
+				psd3 = (p_x3(ncnt) - nsx - nvx) * nvx + (p_y3(ncnt) - nsy - nvy) * nvy + (p_z3(ncnt) - nsz - nvz) * nvz
+				
+//				if ct>=0.0 & INRANGE(dx1,-rsizex,2*rsizex) & INRANGE(dx2,-rsizex,2*rsizex) & INRANGE(dx3,-rsizex,2*rsizex) & INRANGE(dy1,-rsizey,2*rsizey) & INRANGE(dy2,-rsizey,2*rsizey) & INRANGE(dy3,-rsizey,2*rsizey){
+				if ct >= 0.0{
+//					if iv1*iv2<=0.0 | iv1*iv3<0.0 | iv2*iv3<0.0{
 						//logmes "面切 "+cnt
-					}else{
+//					}else{
+				if SIGN(psd1) = 1 and SIGN(psd2) = 1 and SIGN(psd3) = 1 and tooclose = 0{
 						onscreen_flag=1
 						rgbcolor p_col(ncnt)
 						trianglef dx1,dy1,dx2,dy2,dx3,dy3
@@ -241,8 +263,161 @@
 							triangle dx1,dy1,dx2,dy2,dx3,dy3
 						}
 						info_polygoncount++
-					}
-				}
+//					}
+//					}
+				}else{
+					if SIGN(psd1) = -1 and SIGN(psd2) = -1 and SIGN(psd3) = -1{
+						//logmes "完全に裏面"
+					}else{
+						tooclose12 = 0
+						tooclose13 = 0
+						tooclose23 = 0
+						//logmes "一部裏面"
+						#define ctype SQUARE(%1) (%1)*(%1)
+						//(psd1は、点1から下ろした垂線の足から原点までの距離である。ここから、垂線の足-点1の距離(pse1)を求められる。線分(点1-点2)のどこに平面との交点があるかは、垂線の足から点までの距離の比で求まる。
+						//o_x12など: 線分1-2と投影面との交点の座標
+						pse1 = sqrt( ( SQUARE(p_x1(ncnt) - nsx - nvx) + SQUARE(p_y1(ncnt) - nsy - nvy) + SQUARE(p_z1(ncnt) - nsz - nvz) ) - SQUARE(psd1) )
+						pse2 = sqrt( ( SQUARE(p_x2(ncnt) - nsx - nvx) + SQUARE(p_y2(ncnt) - nsy - nvy) + SQUARE(p_z2(ncnt) - nsz - nvz) ) - SQUARE(psd2) )
+						pse3 = sqrt( ( SQUARE(p_x3(ncnt) - nsx - nvx) + SQUARE(p_y3(ncnt) - nsy - nvy) + SQUARE(p_z3(ncnt) - nsz - nvz) ) - SQUARE(psd3) )
+						
+						if       SIGN(psd1) = 1 and SIGN(psd2) = -1 {
+							o_x12 = p_x1(ncnt) + (p_x2(ncnt) - p_x1(ncnt)) * (pse1 - CLOSEST_DISTANCE) / (pse1 + pse2)
+							o_y12 = p_y1(ncnt) + (p_y2(ncnt) - p_y1(ncnt)) * (pse1 - CLOSEST_DISTANCE) / (pse1 + pse2)
+							o_z12 = p_z1(ncnt) + (p_z2(ncnt) - p_z1(ncnt)) * (pse1 - CLOSEST_DISTANCE) / (pse1 + pse2)
+						}else:if SIGN(psd1) = 1 and SIGN(psd2) = -1 {
+							o_x12 = p_x1(ncnt) + (p_x2(ncnt) - p_x1(ncnt)) * pse1 / (pse1 + pse2)
+							o_y12 = p_y1(ncnt) + (p_y2(ncnt) - p_y1(ncnt)) * pse1 / (pse1 + pse2)
+							o_z12 = p_z1(ncnt) + (p_z2(ncnt) - p_z1(ncnt)) * pse1 / (pse1 + pse2)
+						}else{
+							o_x12 = p_x1(ncnt) + (p_x2(ncnt) - p_x1(ncnt)) * pse1 / (pse1 + pse2)
+							o_y12 = p_y1(ncnt) + (p_y2(ncnt) - p_y1(ncnt)) * pse1 / (pse1 + pse2)
+							o_z12 = p_z1(ncnt) + (p_z2(ncnt) - p_z1(ncnt)) * pse1 / (pse1 + pse2)
+						}
+						
+						ovx12=(o_x12-nsx)
+						ovy12=(o_y12-nsy)
+						ovz12=(o_z12-nsz)
+						if (ovx12*nvx+ovy12*nvy+ovz12*nvz)<=CLOSEST_DISTANCE{
+							ovl12=0.0
+							tooclose12 = 1
+						}else{
+							ovl12=1.0/absf(ovx12*nvx+ovy12*nvy+ovz12*nvz)
+							//ovl12=2.0/absf(ovx12*nvx+ovy12*nvy+ovz12*nvz + 10)
+							//ovl12 = powf(0.1, (ovx12*nvx+ovy12*nvy+ovz12*nvz))
+						}
+						jxdo12=ovx12*xdx+ovy12*xdy+ovz12*xdz
+						jydo12=ovx12*ydx+ovy12*ydy+ovz12*ydz
+						ivo12=(ovx12*nvx+ovy12*nvy+ovz12*nvz)
+						
+						dx12=double(rsizex)/2+jxdo12*povv*ovl12 * rscale
+						dy12=double(rsizey)/2+jydo12*povv*ovl12 * rscale
+						
+						
+						
+						o_x13 = p_x1(ncnt) + (p_x3(ncnt) - p_x1(ncnt)) * pse1 / (pse1 + pse3)
+						o_y13 = p_y1(ncnt) + (p_y3(ncnt) - p_y1(ncnt)) * pse1 / (pse1 + pse3)
+						o_z13 = p_z1(ncnt) + (p_z3(ncnt) - p_z1(ncnt)) * pse1 / (pse1 + pse3)
+						
+						ovx13=(o_x13-nsx)
+						ovy13=(o_y13-nsy)
+						ovz13=(o_z13-nsz)
+						logmes (ovx13*nvx+ovy13*nvy+ovz13*nvz)
+						if (ovx13*nvx+ovy13*nvy+ovz13*nvz)<=CLOSEST_DISTANCE{
+							ovl13=0.0
+							tooclose13 = 1
+						}else{
+							ovl13=1.0/absf(ovx13*nvx+ovy13*nvy+ovz13*nvz)
+							//ovl13 = powf(0.1, (ovx13*nvx+ovy13*nvy+ovz13*nvz))
+							//ovl13=2.0/absf(ovx13*nvx+ovy13*nvy+ovz13*nvz + 10)
+						}
+						jxdo13=ovx13*xdx+ovy13*xdy+ovz13*xdz
+						jydo13=ovx13*ydx+ovy13*ydy+ovz13*ydz
+						ivo13=(ovx13*nvx+ovy13*nvy+ovz13*nvz)
+						
+						dx13=double(rsizex)/2+jxdo13*povv*ovl13 * rscale
+						dy13=double(rsizey)/2+jydo13*povv*ovl13 * rscale
+						
+						
+						
+						o_x23 = p_x2(ncnt) + (p_x3(ncnt) - p_x2(ncnt)) * pse2 / (pse2 + pse3)
+						o_y23 = p_y2(ncnt) + (p_y3(ncnt) - p_y2(ncnt)) * pse2 / (pse2 + pse3)
+						o_z23 = p_z2(ncnt) + (p_z3(ncnt) - p_z2(ncnt)) * pse2 / (pse2 + pse3)
+						
+						ovx23=(o_x23-nsx)
+						ovy23=(o_y23-nsy)
+						ovz23=(o_z23-nsz)
+						if (ovx23*nvx+ovy23*nvy+ovz23*nvz)<=CLOSEST_DISTANCE{
+							ovl23=0.0
+							tooclose23=1
+						}else{
+							ovl23=1.0/absf(ovx23*nvx+ovy23*nvy+ovz23*nvz)
+							//ovl23 = powf(0.1, (ovx23*nvx+ovy23*nvy+ovz23*nvz))
+							//ovl23=2.0/absf(ovx23*nvx+ovy23*nvy+ovz23*nvz + 10)
+						}
+						jxdo23=ovx23*xdx+ovy23*xdy+ovz23*xdz
+						jydo23=ovx23*ydx+ovy23*ydy+ovz23*ydz
+						ivo23=(ovx23*nvx+ovy23*nvy+ovz23*nvz)
+						
+						dx23=double(rsizex)/2+jxdo23*povv*ovl23 * rscale
+						dy23=double(rsizey)/2+jydo23*povv*ovl23 * rscale
+						
+						//logmes "" + (pse1 / (pse1 + pse2)) + " " + (pse1 / (pse1 + pse3)) + " " + (pse2 / (pse2 + pse3)) // PASS
+						//logmes  "" + o_x12 + " " + o_x13 + " " + o_x23 // PASS
+						//logmes  "" + o_y12 + " " + o_y13 + " " + o_y23 // PASS
+						//logmes  "" + o_z12 + " " + o_z13 + " " + o_z23 // PASS
+						//logmes "" + jxdo12 + " " + jxdo13 + " " + jxdo23 // PASS
+						//logmes "" + jydo12 + " " + jydo13 + " " + jydo23 // PASS
+						//logmes "" + ivo12 + " " + ivo13 + " " + ivo23 // FAIL (if negative, goes wrong)
+						//logmes "" + ovl12 + " " + ovl13 + " " + ovl23
+						//logmes strf("%.2f %.2f  %.2f %.2f  %.2f %.2f", dx12, dy12, dx13, dy13, dx23, dy23)
+						//---------------------------------------------------------
+						if  SIGN(psd1) = 1 and SIGN(psd2) = -1 and SIGN(psd3) = -1 and tooclose12 = 0 and tooclose13 = 0{
+							onscreen_flag=1
+							rgbcolor p_col(ncnt)
+							//logmes "+--"
+							trianglef dx1,dy1,dx12,dy12,dx13,dy13
+						}
+						//---------------------------------------------------------
+						if  SIGN(psd1) = -1 and SIGN(psd2) = 1 and SIGN(psd3) = -1 and tooclose12 = 0 and tooclose23 = 0{
+							onscreen_flag=1
+							rgbcolor p_col(ncnt)
+							//logmes "-+-"
+							trianglef dx2,dy2,dx12,dy12,dx23,dy23
+						}
+						//---------------------------------------------------------
+						if  SIGN(psd1) = -1 and SIGN(psd2) = -1 and SIGN(psd3) = 1 and tooclose13 = 0 and tooclose23 = 0{
+							onscreen_flag=1
+							rgbcolor p_col(ncnt)
+							//logmes "--+"
+							trianglef dx3,dy3,dx13,dy13,dx23,dy23
+						}
+						//---------------------------------------------------------
+						if  SIGN(psd1) = 1 and SIGN(psd2) = 1 and SIGN(psd3) = -1 and tooclose13 = 0 and tooclose23 = 0{
+							onscreen_flag=1
+							rgbcolor p_col(ncnt)
+							//logmes "++-"
+							trianglef dx13, dy13, dx23, dy23, dx1, dy1
+							trianglef dx23, dy23, dx2, dy2, dx1, dy1
+						}
+						//---------------------------------------------------------
+						if  SIGN(psd1) = -1 and SIGN(psd2) = 1 and SIGN(psd3) = 1 and tooclose13 = 0 and tooclose12 = 0{
+							onscreen_flag=1
+							rgbcolor p_col(ncnt)
+							//logmes "-++"
+							trianglef dx13, dy13, dx12, dy12, dx2, dy2
+							trianglef dx13, dy13, dx2, dy2, dx3, dy3
+						}
+						//---------------------------------------------------------
+						if  SIGN(psd1) = 1 and SIGN(psd2) = -1 and SIGN(psd3) = 1 and tooclose12 = 0 and tooclose23 = 0{
+							onscreen_flag=1
+							rgbcolor p_col(ncnt)
+							//logmes "+-+"
+							trianglef dx12, dy12, dx23, dy23, dx1, dy1
+							trianglef dx23, dy23, dx1, dy1, dx3, dy3
+						}
+						//---------------------------------------------------------*/
+					}//*/
+				}	}
 				current_polygon=ncnt
 				gosub customroutine
 			}

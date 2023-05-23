@@ -51,7 +51,7 @@
 		if (ky&2)/2 = (ky&8)/8{
 			yr=0.0
 		}
-		if (ky&2048)=2048 & cnt\4=0{
+		if (ky&2048)=2048 & cnt\3=0{
 			repeat 64
 				if bul_avail(cnt)=0{
 					bul_avail(cnt)=1
@@ -76,7 +76,7 @@
 		n3d_deleteByGroup 2
 		repeat 64
 			if bul_avail(cnt)=1{
-				bul_y(cnt)-=15
+				bul_y(cnt)-=20
 				n3dm_setModel laser, 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, 0.0
 				if bul_y(cnt)<-700{
 					bul_avail(cnt)=0
@@ -90,5 +90,5 @@
 		n3d_renderinfo
 		
 		redraw 1
-		await 33+cnt\3/2
+		await 50
 	loop
