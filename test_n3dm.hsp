@@ -24,11 +24,11 @@
 	//îwåiêØ
 	screen 2, 1600, 600, SCREEN_HIDE
 	cls 4
-	repeat 526
+	repeat 256
 		x = rnd(1600)
 		y = rnd(400)
-		s = rnd(3)+1
-		rgbcolor $444444
+		s = rnd(2)+1
+		rgbcolor $888888
 		circle x-s, y-s, x+s, y+s, 1
 	loop
 	
@@ -335,10 +335,11 @@ stop
 *proc_axis
 	//Y(ècê¸
 	repeat 51
-		lcnt = cnt - 25 - x / 16
-		n3d_setpolygon 256, $444444, 64.0, 16.0 * lcnt, 0.0,  512.0, 16.0 * lcnt, 0.0,  128.0, 16.0 * lcnt, 0.0
-		n3d_setpolygon 256, $444444, 64.0, 16.0 * lcnt, 0.0,  32.0, 16.0 * lcnt, 0.0,  32.0, 16.0 * lcnt, 0.0
-		n3d_setpolygon 256, $444444, 32.0, 16.0 * lcnt, 0.0,   36.0, 16.0 * lcnt, 0.0, -512.0, 16.0 * lcnt, 0.0
+		lcnt = cnt - 25 - ( x ) / 16
+		n3d_setpolygon 256, $444444, 0.0, 16.0 * lcnt, 0.0, 	768.0, 16.0 * lcnt, 0.0, 	-48.0, 16.0 * lcnt, 0.0
+		n3d_setpolygon 256, $444444, 0.0, 16.0 * lcnt, 0.0, 	768.0, 16.0 * lcnt, 0.0, 	0.0, 16.0 * lcnt, 0.0
+		//n3d_setpolygon 256, $444444, 64.0, 16.0 * lcnt, 0.0,  8.0, 16.0 * lcnt, 0.0,  0.0, 16.0 * lcnt, 0.0
+		n3d_setpolygon 256, $444444, 16.0, 16.0 * lcnt, 0.0, 36.0, 16.0 * lcnt, 0.0, -512.0, 16.0 * lcnt, 0.0
 	loop
 	if axis_progress = 1{
 		axistimer = (axistimer + airplane_speed) \ 16
@@ -346,7 +347,7 @@ stop
 	//X(â°ê¸
 	repeat 96
 		lcnt = cnt - 40
-		n3d_setpolygon 256, $444444, 16.0 * lcnt - axistimer, -384.0 - x, 0.0,  16.0 * lcnt - axistimer, 512.0, 0.0,  16.0 * lcnt - axistimer, 0.0 - x, 0.0
+		n3d_setpolygon 256, $444444, 16.0 * lcnt - axistimer, -384.0 - x, 0.0,  16.0 * lcnt - axistimer, 512.0 - x, 0.0,  16.0 * lcnt - axistimer, 0.0 - x, 0.0
 	loop
 	return
 
