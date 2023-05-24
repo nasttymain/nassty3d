@@ -298,7 +298,7 @@ stop
 			n3d_setCameraPosition 48.0 * cos(deg2rad(180 - sectime * 5))- 0.0, 32.0 * sin(deg2rad(180 - sectime * 5)) + 0.0 - x, -8.0 + z
 			n3d_setCameraAngleByLookingAt 0.0, -x, z
 		}
-		if camtime = 120{
+		if camtime = 90{
 			cammode = 3
 			camtime = 0
 			airplane_manuever_avail = 0
