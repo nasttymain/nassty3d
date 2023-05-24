@@ -1,7 +1,16 @@
 #include "libn3d.hsp"
+#define FULLSCREEN 1
 *init
 	screen 0, 800, 800, SCREEN_HIDE
-	screen 1, 640, 480
+	if FULLSCREEN = 0{
+		screen 1, 640, 480
+	}
+	if FULLSCREEN = 1{
+		screen 1, 640, 480, SCREEN_HIDE
+		scrzoom = limitf(double(GINFO_DISPX)/640, 0.0, double(GINFO_DISPY)/480)
+		bgscr 29, GINFO_DISPX, GINFO_DISPY, 0, 0, 0
+		cls 4
+	}
 	n3d_initialize
 	n3dm_initialize
 	
@@ -12,14 +21,27 @@
 	sdim whitebox, 65536
 	bload "whitebox.n3dm", whitebox
 	
+	//”wŒi¯
+	screen 2, 1600, 600, SCREEN_HIDE
+	cls 4
+	repeat 526
+		x = rnd(1600)
+		y = rnd(400)
+		s = rnd(3)+1
+		rgbcolor $444444
+		circle x-s, y-s, x+s, y+s, 1
+	loop
+	
 //	n3d_setCameraPosition -24.0, 0.0, -24.0
 //	n3d_setCameraAngle 0.0, pi*0.35,0.0
+	gsel 0
+	
 	n3d_setCameraPosition -48.0, 0.0, -32.0
 	n3d_setCameraAngle 0.0, pi*0.25,0.0
 	
-	x=0.0
+	x=-195.2
 	y=0.0
-	
+	z = -8.0
 	ddim roll
 	roll = 0.0
 	ddim pitch
@@ -30,19 +52,23 @@
 	pitch_targ = 0.0
 	
 	
-	dim bul_avail,64
-	dim bul_x,64
-	dim bul_y,64
+	dim bul_avail, 64
+	dim bul_x, 64
+	dim bul_y, 64
+	dim bul_z, 64
+	dim reshot
 	
 	dim cammode
 	cammode = 1
 	dim camtime
 	camtime = 0
 	
-	dim enem_avail
-	enem_avail = 0
+	dim  enem_avail	 	, 32
+	ddim enem_x			, 32
+	ddim enem_y			, 32
+	sdim enem_model,4096, 32
 	
-	ddim fa, 128
+	dim fa, 128
 	ddim fx, 128
 	ddim fy, 128
 	ddim fz, 128
@@ -59,6 +85,12 @@
 	dim airplane_speed
 	airplane_speed = 6
 	
+	dim airplane_manuever_avail
+	airplane_manuever_avail = 0
+	
+	dim axis_progress
+	axis_progress = 1
+	
 *main
 	repeat
 		gsel 0
@@ -66,16 +98,23 @@
 		color 0,0,0
 		boxf
 		color 255,255,255
+		
+		
 		n3d_deleteall
 		
 		gosub *proc_key
 		gosub *proc_camera
+		gosub *proc_background
 		gosub *proc_axis
 		gosub *proc_enemy
+		gosub *proc_reticle
 		gosub *proc_starship
 		gosub *proc_bullet
+		gosub *proc_f
 		
 		n3d_render
+		
+		
 //		pos 0,0
 //		gzoom 640, 480, 0, 0, 0, 320, 240, 0
 		
@@ -88,6 +127,12 @@
 		grotate 0, 0, 0, deg2rad(roll / 4), 800, 800
 		n3d_renderinfo
 		redraw 1
+		
+		if FULLSCREEN = 1{
+			gsel 29
+			pos (GINFO_DISPX - scrzoom * 640) / 2, (GINFO_DISPY - scrzoom * 480) / 2
+			gzoom scrzoom * 640, scrzoom * 480, 1, 0, 0, 640, 480, 0
+		}
 		
 		await 50
 		if ky & 128{
@@ -103,31 +148,44 @@ stop
 	return
 
 *proc_starship
-	if ky&1{
+	if airplane_manuever_avail = 1{
+		kya = ky & (1 + 2 + 4 + 8 + 2048)
+	}else{
+		if cammode = 1 and camtime >= 40{
+			kya = 4
+		}else:if cammode = 3 and axis_progress = 0{
+			kya = 2
+		}else{
+			kya = 0
+		}
+	}
+	if kya&1{
 		x-=3.2
-		roll_targ = 30
+		roll_targ = 40
 		//xr=0.3
 	}
-	if ky&2{
-		y-=1.6
+	if kya&2{
+		//y-=1.6
+		z -= 3.2
 		//yr=0.2
-		pitch_targ = 20
+		pitch_targ = -20
 	}
-	if ky&4{
+	if kya&4{
 		x+=3.2
 		//xr=-0.3
-		roll_targ = -30
+		roll_targ = -40
 	}
-	if ky&8{
-		y+=1.6
-		pitch_targ = -20
+	if kya&8{
+		//y+=1.6
+		z += 3.2
+		pitch_targ = 20
 		//yr=-0.2
 	}
-	if (ky&1)/1 = (ky&4)/4{
+	if (kya&1)/1 = (kya&4)/4{
 		//xr=0.0
 		roll_targ = 0.0
 	}
-	if (ky&2)/2 = (ky&8)/8{
+	if (kya&2)/2 = (kya&8)/8{
 		//yr=0.0
 		pitch_targ = 0.0
 	}
@@ -148,27 +206,40 @@ stop
 		roll -= 10
 	}
 	
-	if (ky&2048)=2048 & cnt\3=0{
+	if (kya&2048)=2048 & reshot=0{
+		reshot = 3
 		repeat 64
 			if bul_avail(cnt)=0{
 				bul_avail(cnt)=1
-				bul_x(cnt)=x - 5.0 * cos(deg2rad(roll))
-				bul_y(cnt)=y+15+rnd(4)
+				bul_x(cnt)= x - 5.0 * cos(deg2rad(roll))
+				bul_y(cnt)=/*y+*/15+rnd(4)
+				bul_z(cnt) = z + 5.0 * sin(deg2rad(roll))
 				break
 			}
 		loop
 		repeat 64
 			if bul_avail(cnt)=0{
 				bul_avail(cnt)=1
-				bul_x(cnt)=x + 5.0 * cos(deg2rad(roll))
-				bul_y(cnt)=y+15+rnd(4)
+				bul_x(cnt)= x + 5.0 * cos(deg2rad(roll))
+				bul_y(cnt)=/*y+*/15+rnd(4)
+				bul_z(cnt) = z - 5.0 * sin(deg2rad(roll))
 				break
 			}
 		loop
 	}
-	n3dm_setModel testplane, 1, -y, -x, 0.0
-	n3d_rotateXByGroup 1, -y, -x, 0.0,  double(roll) * 2 * PI / 360//xr
-	n3d_rotateYByGroup 1, -y, -x, 0.0, double(pitch) * 2 * PI / 360//yr
+	reshot = limit(reshot-1, 0, 16)
+	
+	if axis_progress = 0 and cammode = 3{
+		y -= airplane_speed * 2
+		//z -= 2.0
+	}else{
+		z = limitf(z, -100.0, 0.0)
+	}
+	
+	
+	n3dm_setModel testplane, 1, -y, -x, z
+	n3d_rotateXByGroup 1, -y, -x, z,  double(roll) * 2 * PI / 360//xr
+	n3d_rotateYByGroup 1, -y, -x, z, double(pitch) * 2 * PI / 360//yr
 	return
 
 
@@ -177,8 +248,8 @@ stop
 	repeat 64
 		if bul_avail(cnt)=1{
 			bul_y(cnt)-=24
-			n3dm_setModel laser, 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, 0.0
-			if bul_y(cnt)<-700{
+			n3dm_setModel laser, 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, bul_z(cnt)
+			if bul_y(cnt)<-480{
 				bul_avail(cnt)=0
 			}
 		}
@@ -191,70 +262,121 @@ stop
 	if cammode = 1{
 		if camtime < 40{
 			sectime = camtime
-			n3d_setCameraPosition 116.0 - 2.5 * sectime, 0.0, 2.0
+			n3d_setCameraPosition 116.0 - 2.5 * sectime, 0.0 - x, 2.0 + z
 			//n3d_setCameraAngle pi, pi*0.5, 0.0
-			n3d_setCameraAngleByLookingAt 0.0, 0.0, 0.0
+			n3d_setCameraAngleByLookingAt 0.0, -x, z
 		}
 		if camtime >= 40 and camtime <= 40 + 60{
-			enem_avail = 1
-			enem_y = 512
+			repeat 3
+				enem_avail(cnt) = 1
+				enem_x(cnt) = 32.0 * cnt - 32.0
+				enem_y(cnt) = 512.0
+				enem_z(cnt) = -5.0 + abs(cnt - 1) * -20.0
+				enem_model(cnt) = whitebox
+			loop
 			sectime = camtime - 40
-			n3d_setCameraPosition 32.0 * cos(deg2rad(sectime * 3))- 16.0, 32.0 * sin(deg2rad(sectime * 3)) + 0.0, 2.0 - (sectime) * 18 / 60
-			n3d_setCameraAngleByLookingAt 0.0, 0.0, 0.0
+			n3d_setCameraPosition 32.0 * cos(deg2rad(sectime * 3))- 16.0, 32.0 * sin(deg2rad(sectime * 3)) + 0.0 - x, 2.0 - (sectime) * 10 / 60 + z
+			n3d_setCameraAngleByLookingAt 0.0, -x, z
+		}
+		if camtime = 100{
+			cammode = 0
+			airplane_manuever_avail = 1
 		}
 	}
 	camtime += 1
-	
-	n3d_setCameraAngleByLookingAt 0.0, 0.0, 0.0
+	if cammode = 0{
+		n3d_setCameraPosition -48.0, 0.0 - x, -8.0 + z
+		n3d_setCameraAngleByLookingAt 0.0, -x, z
+	}
+	if cammode = 2{
+		sectime = camtime
+		if camtime <= 30{
+			n3d_setCameraPosition 48.0 * cos(deg2rad(180 - sectime * 5))- 0.0, 32.0 * sin(deg2rad(180 - sectime * 5)) + 0.0 - x, -8.0 + z
+			n3d_setCameraAngleByLookingAt 0.0, -x, z
+		}else{
+			sectime = 30
+			n3d_setCameraPosition 48.0 * cos(deg2rad(180 - sectime * 5))- 0.0, 32.0 * sin(deg2rad(180 - sectime * 5)) + 0.0 - x, -8.0 + z
+			n3d_setCameraAngleByLookingAt 0.0, -x, z
+		}
+		if camtime = 120{
+			cammode = 3
+			camtime = 0
+			airplane_manuever_avail = 0
+		}
+	}
+	if cammode = 3{
+		axis_progress = 0
+		n3d_setCameraAngleByLookingAt -y, -x, z
+	}
 	t = c_sightt@nastty3d
-	t = t + deg2rad(double(pitch) / 10)
+	t = t + deg2rad(double(-pitch) / 5)
 	c_sightt@nastty3d = t
+	
+	if ky&64{
+		cammode = 2
+		camtime = 0
+	}
+	
 	return
 
 *proc_axis
-	repeat 41
-		lcnt = cnt - 20
+	//Y(cü
+	repeat 51
+		lcnt = cnt - 25 - x / 16
 		n3d_setpolygon 256, $888888, -36.0, 16.0 * lcnt, 0.0,  1024.0, 16.0 * lcnt, 0.0,  -36.0, 16.0 * lcnt, 0.0
+		n3d_setpolygon 256, $888888,  36.0, 16.0 * lcnt, 0.0, -512.0, 16.0 * lcnt, 0.0,-512.0, 16.0 * lcnt, 0.0
 	loop
-	axistimer = (axistimer + airplane_speed) \ 16
+	if axis_progress = 1{
+		axistimer = (axistimer + airplane_speed) \ 16
+	}
+	//X(‰¡ü
 	repeat 80
-		lcnt = cnt - 20
-		n3d_setpolygon 256, $888888, 16.0 * lcnt - axistimer, -256.0, 0.0,  16.0 * lcnt - axistimer, 256.0, 0.0,  16.0 * lcnt - axistimer, 256.0, 0.0
+		lcnt = cnt - 40
+		n3d_setpolygon 256, $888888, 16.0 * lcnt - axistimer, -384.0 - x, 0.0,  16.0 * lcnt - axistimer, 384.0, 0.0,  16.0 * lcnt - axistimer, 384.0 - x, 0.0
 	loop
 	return
 
 *proc_enemy
-	if enem_avail = 1{
-		n3dm_setModel whitebox, 512, enem_y, 0, -5.0
-		enem_y -= airplane_speed
-	}
-	if enem_avail = 1{
-		repeat length(bul_avail)
-			if bul_avail(cnt) = 1{
-				if absf(bul_x(cnt) - 0) < 10.0 and absf(-bul_y(cnt) - enem_y) < 26.0{
-					enem_avail = 0
-					bul_avail(cnt) = 0
-					repeat 16
-						fx(cnt) = enem_y
-						fy(cnt) = 0.0
-						fy(cnt) = double(rnd(21) - 10)/2
-						fz(cnt) = double(rnd(21) - 10)/2
-						ft(cnt) = double(rnd(157)) / 100
-						fp(cnt) = double(rnd(157)) / 100
-						fa(cnt) = 1
-						fs(cnt) = rnd(4) + 6
-						fxs(cnt) = double(rnd(21) - 10)/10
-						fys(cnt) = double(rnd(21) - 10)/10
-						fzs(cnt) = double(rnd(21) - 10)/10
-						fts(cnt) = double(rnd(11) - 5) / 100
-						fps(cnt) = double(rnd(11) - 5) / 100
-						flt(cnt) = 0
-					loop
+	repeat length(enem_avail)
+		if enem_avail(cnt) = 1{
+			n3dm_setModel enem_model(cnt), 512 + cnt, enem_y(cnt), enem_x(cnt), enem_z(cnt)
+			enem_y(cnt) -= airplane_speed
+		}
+	loop
+	repeat length(enem_avail)
+		if enem_avail(cnt) = 1{
+			ecnt = cnt
+			repeat length(bul_avail)
+				if bul_avail(cnt) = 1{
+					if absf(-bul_x(cnt) - enem_x(ecnt)) < 10.0 and absf(-bul_y(cnt) - enem_y(ecnt)) < 26.0 and absf(bul_z(cnt) - enem_z(ecnt)) < 10.0 and enem_avail(ecnt) = 1{
+						logmes ecnt
+						enem_avail(ecnt) = 0
+						bul_avail(cnt) = 0
+						repeat 8
+							gosub *function_f_findvacant
+							fx(t) = enem_y(ecnt)
+							fy(t) = enem_x(ecnt) + double(rnd(21) - 10)/2
+							fz(t) = enem_z(ecnt) + double(rnd(21) - 10)/2
+							ft(t) = double(rnd(157)) / 100
+							fp(t) = double(rnd(157)) / 100
+							fa(t) = 1
+							fs(t) = rnd(6) + 6
+							fxs(t) = double(rnd(21) - 10)/10
+							fys(t) = double(rnd(21) - 10)/10
+							fzs(t) = double(rnd(21) - 10)/10
+							fts(t) = double(rnd(11) - 5) / 100
+							fps(t) = double(rnd(11) - 5) / 100
+							flt(t) = 0
+						loop
+					}
 				}
-			}
-		loop
-	}
+			loop
+		}
+	loop
 	
+	return
+
+*proc_f
 	repeat length(fa)
 		if fa(cnt) = 1{
 			fx(cnt) += fxs(cnt)
@@ -263,14 +385,18 @@ stop
 			ft(cnt) += fts(cnt)
 			fp(cnt) += fps(cnt)
 			
-			fx(cnt) -= airplane_speed
+			flt(cnt) += 1
+			
+			if axis_progress = 1{
+				fx(cnt) -= airplane_speed
+			}
 			
 			n3d_deleteByGroup 1024 + cnt
 			
 			n3d_setpolygon 1024 + cnt, $FFFFFF, fx(cnt), fy(cnt), fz(cnt),  fx(cnt) - fs(cnt), fy(cnt), fz(cnt),  fx(cnt), fy(cnt) - sqrt(fs(cnt) * 3 / 2), fz(cnt) - sqrt(fs(cnt) * 3 / 2)
 			n3d_rotateXByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),ft(cnt)
 			n3d_rotateYByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
-			if flt(cnt) \ 6 = 5{
+			if flt(cnt) \ 10 = 9{
 				fs(cnt) -= 1
 			}
 			if flt(cnt) > 256{
@@ -281,5 +407,30 @@ stop
 		
 	loop//*/
 	
-	
+	return
+
+*function_f_findvacant
+	t = (t + 1) \ length(fa)
+	repeat length(fa)
+		if fa(cnt) = 0{
+			t = cnt
+			break
+		}
+	loop
+	return
+
+
+*proc_background
+	gmode 0
+	pos -800 + rad2deg(c_sightp@nastty3d) * 1600 / 360, -pitch
+	gcopy 2, 0, 0, 1600, 600
+	pos -1600-800 + rad2deg(c_sightp@nastty3d) * 1600 / 360, -pitch
+	gcopy 2, 0, 0, 1600, 600
+	return
+
+*proc_reticle
+	if cammode = 0{
+		//n3d_setCameraPosition -48.0, 0.0 - x, -8.0 + z
+		//n3d_setpolygon 4096 + cnt, $FF0000, 0.0, -x - 0.25, z,   0.0, -x + 0.25, z,   256.0, -x, z
+	}
 	return
