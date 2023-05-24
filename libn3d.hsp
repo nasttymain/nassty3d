@@ -7,6 +7,7 @@
 		dim y,4
 	return
 	#deffunc trianglef int x1,int y1,int x2,int y2,int x3,int y3
+		triangle x1,y1,x2,y2,x3,y3
 		if limit(x1, -32768, 32768) != x1 or limit(x2, -32768, 32768) != x2 or limit(x3, -32768, 32768) != x3{
 			//logmes "GSQUARE X OUT OF RANGE!"
 			return 1
@@ -15,7 +16,6 @@
 			//logmes "GSQUARE Y OUT OF RANGE!"
 			return 1
 		}
-		triangle x1,y1,x2,y2,x3,y3
 		if initialized = 0{
 			_modt_init
 		}

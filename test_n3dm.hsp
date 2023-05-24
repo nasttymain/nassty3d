@@ -91,6 +91,9 @@
 	dim axis_progress
 	axis_progress = 1
 	
+	dim game_cameramode
+	game_cameramode = 0
+	
 *main
 	repeat
 		gsel 0
@@ -193,9 +196,9 @@ stop
 	if       abs(pitch_targ - pitch) <= 10{
 		pitch = pitch_targ
 	}else:if pitch_targ > pitch{
-		pitch += 10
+		pitch += 5
 	}else{
-		pitch -= 10
+		pitch -= 5
 	}
 	
 	if       abs(roll_targ - roll) <= 5{
@@ -285,8 +288,14 @@ stop
 	}
 	camtime += 1
 	if cammode = 0{
-		n3d_setCameraPosition -48.0, 0.0 - x, -8.0 + z
-		n3d_setCameraAngleByLookingAt 0.0, -x, z
+		if game_cameramode = 0{
+			n3d_setCameraPosition -48.0, 0.0 - x, -8.0 + z
+			n3d_setCameraAngleByLookingAt 0.0, -x, z
+		}
+		if game_cameramode = 1{
+			n3d_setCameraPosition 0.0, 0.0 - x, -4.0 + z
+			n3d_setCameraAngle 0.0, pi/2, 0.0
+		}
 	}
 	if cammode = 2{
 		sectime = camtime
@@ -313,6 +322,10 @@ stop
 	c_sightt@nastty3d = t
 	
 	if ky&64{
+		game_cameramode = (game_cameramode + 1) \ 2
+	}
+	
+	if ky&1024{
 		cammode = 2
 		camtime = 0
 	}
@@ -323,16 +336,17 @@ stop
 	//Y(cü
 	repeat 51
 		lcnt = cnt - 25 - x / 16
-		n3d_setpolygon 256, $888888, -36.0, 16.0 * lcnt, 0.0,  1024.0, 16.0 * lcnt, 0.0,  -36.0, 16.0 * lcnt, 0.0
-		n3d_setpolygon 256, $888888,  36.0, 16.0 * lcnt, 0.0, -512.0, 16.0 * lcnt, 0.0,-512.0, 16.0 * lcnt, 0.0
+		n3d_setpolygon 256, $444444, 64.0, 16.0 * lcnt, 0.0,  512.0, 16.0 * lcnt, 0.0,  128.0, 16.0 * lcnt, 0.0
+		n3d_setpolygon 256, $444444, 64.0, 16.0 * lcnt, 0.0,  32.0, 16.0 * lcnt, 0.0,  32.0, 16.0 * lcnt, 0.0
+		n3d_setpolygon 256, $444444, 32.0, 16.0 * lcnt, 0.0,   36.0, 16.0 * lcnt, 0.0, -512.0, 16.0 * lcnt, 0.0
 	loop
 	if axis_progress = 1{
 		axistimer = (axistimer + airplane_speed) \ 16
 	}
 	//X(‰¡ü
-	repeat 80
+	repeat 96
 		lcnt = cnt - 40
-		n3d_setpolygon 256, $888888, 16.0 * lcnt - axistimer, -384.0 - x, 0.0,  16.0 * lcnt - axistimer, 384.0, 0.0,  16.0 * lcnt - axistimer, 384.0 - x, 0.0
+		n3d_setpolygon 256, $444444, 16.0 * lcnt - axistimer, -384.0 - x, 0.0,  16.0 * lcnt - axistimer, 512.0, 0.0,  16.0 * lcnt - axistimer, 0.0 - x, 0.0
 	loop
 	return
 
@@ -398,8 +412,11 @@ stop
 			n3d_rotateYByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
 			if flt(cnt) \ 10 = 9{
 				fs(cnt) -= 1
+				if fs(cnt) = 0{
+					fa(cnt) = 0
+				}
 			}
-			if flt(cnt) > 256{
+			if flt(cnt) > 128{
 				fa(cnt) = 0
 			}
 		}else{
