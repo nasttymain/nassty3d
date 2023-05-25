@@ -1,5 +1,17 @@
+#include "mod_joystick2.as"
 #include "libn3d.hsp"
-#define FULLSCREEN 1
+#include "mod_taggedlabel.hsp"
+#define FULLSCREEN 0
+
+#define JOYSTICK_PORT 0
+
+#define KY_LEFT		((ky&    1)>> 0)
+#define KY_UP 		((ky&    2)>> 1)
+#define KY_RIGHT	((ky&    4)>> 2)
+#define KY_DOWN		((ky&    8)>> 3)
+#define KY_Z		((ky& 2048)>>11)
+
+
 *init
 	screen 0, 800, 800, SCREEN_HIDE
 	if FULLSCREEN = 0{
@@ -11,8 +23,6 @@
 		bgscr 29, GINFO_DISPX, GINFO_DISPY, 0, 0, 0
 		cls 4
 	}
-	n3d_initialize
-	n3dm_initialize
 	
 	sdim testplane,65536
 	bload "testplane.n3dm",testplane
@@ -31,13 +41,17 @@
 		rgbcolor $888888
 		circle x-s, y-s, x+s, y+s, 1
 	loop
+*start
+	n3d_initialize
+	n3dm_initialize
 	
+	taglab_init
 //	n3d_setCameraPosition -24.0, 0.0, -24.0
 //	n3d_setCameraAngle 0.0, pi*0.35,0.0
 	gsel 0
 	
-	n3d_setCameraPosition -48.0, 0.0, -32.0
-	n3d_setCameraAngle 0.0, pi*0.25,0.0
+	//n3d_setCameraPosition -48.0, 0.0, -32.0
+	//n3d_setCameraAngle 0.0, pi*0.25,0.0
 	
 	x=-195.2
 	y=0.0
@@ -59,7 +73,7 @@
 	dim reshot
 	
 	dim cammode
-	cammode = 1
+	cammode = -1
 	dim camtime
 	camtime = 0
 	
@@ -89,10 +103,13 @@
 	airplane_manuever_avail = 0
 	
 	dim axis_progress
-	axis_progress = 1
+	axis_progress = 0
 	
 	dim game_cameramode
 	game_cameramode = 0
+	
+	dim game_reset
+	game_reset = 0
 	
 *main
 	repeat
@@ -106,20 +123,27 @@
 		n3d_deleteall
 		
 		gosub *proc_key
-		gosub *proc_camera
-		gosub *proc_background
-		gosub *proc_axis
-		gosub *proc_enemy
-		gosub *proc_reticle
-		gosub *proc_starship
-		gosub *proc_bullet
-		gosub *proc_f
 		
-		n3d_render
+		if cammode = -1{
+			//camtime
+			gosub *proc_axis
+			gosub *proc_title_viewship
+			gosub *proc_titletext
+			gosub *title_control
+			n3d_render
+		}else:if cammode >= 0{
+			gosub *proc_camera
+			gosub *proc_background
+			gosub *proc_axis
+			gosub *proc_enemy
+			gosub *proc_reticle
+			gosub *proc_starship
+			gosub *proc_bullet
+			gosub *proc_f
+			n3d_render
+		}
 		
-		
-//		pos 0,0
-//		gzoom 640, 480, 0, 0, 0, 320, 240, 0
+		camtime += 1
 		
 		redraw 1
 		
@@ -129,6 +153,8 @@
 		pos 320, 240
 		grotate 0, 0, 0, deg2rad(roll / 4), 800, 800
 		n3d_renderinfo
+		rgbcolor $EEEEEE
+		taglab_draw
 		redraw 1
 		
 		if FULLSCREEN = 1{
@@ -138,16 +164,34 @@
 		}
 		
 		await 50
+		if game_reset = 1{
+			break
+		}
 		if ky & 128{
+			game_reset = 0
 			break
 		}
 //		if camtime=60:stop
 	loop
-end
+
+	if game_reset = 1{
+		goto *start
+	}
+	
+	end
 stop
+
+
+
+
 
 *proc_key
 	stick ky,15+2048
+	joyGetPosEx jky, JOYSTICK_PORT
+	if stat = 0{
+		dialog "Joystick Error"
+		end
+	}
 	return
 
 *proc_starship
@@ -263,6 +307,9 @@ stop
 
 *proc_camera
 	if cammode = 1{
+		if camtime <= 1{
+			axis_progress = 1
+		}
 		if camtime < 40{
 			sectime = camtime
 			n3d_setCameraPosition 116.0 - 2.5 * sectime, 0.0 - x, 2.0 + z
@@ -286,7 +333,7 @@ stop
 			airplane_manuever_avail = 1
 		}
 	}
-	camtime += 1
+	//camtime += 1
 	if cammode = 0{
 		if game_cameramode = 0{
 			n3d_setCameraPosition -48.0, 0.0 - x, -8.0 + z
@@ -326,8 +373,9 @@ stop
 	}
 	
 	if ky&1024{
-		cammode = 2
-		camtime = 0
+		game_reset = 1
+		//cammode = 2
+		//camtime = 0
 	}
 	
 	return
@@ -336,8 +384,12 @@ stop
 	//Y(縦線
 	repeat 51
 		lcnt = cnt - 25 - ( x ) / 16
-		n3d_setpolygon 256, $444444, 0.0, 16.0 * lcnt, 0.0, 	768.0, 16.0 * lcnt, 0.0, 	-48.0, 16.0 * lcnt, 0.0
-		n3d_setpolygon 256, $444444, 0.0, 16.0 * lcnt, 0.0, 	768.0, 16.0 * lcnt, 0.0, 	0.0, 16.0 * lcnt, 0.0
+		if game_cameramode = 1 and cammode = 0{
+			n3d_setpolygon 256, $444444, -24.0, 16.0 * lcnt, 0.0, 	768.0, 16.0 * lcnt, 0.0, 	-24.0, 16.0 * lcnt, 0.0
+		}else{
+			n3d_setpolygon 256, $444444, 0.0, 16.0 * lcnt, 0.0, 	768.0, 16.0 * lcnt, 0.0, 	-48.0, 16.0 * lcnt, 0.0
+		}
+		n3d_setpolygon 256, $444444, 32.0, 16.0 * lcnt, 0.0, 	256.0, 16.0 * lcnt, 0.0, 	128.0, 16.0 * lcnt, 0.0
 		//n3d_setpolygon 256, $444444, 64.0, 16.0 * lcnt, 0.0,  8.0, 16.0 * lcnt, 0.0,  0.0, 16.0 * lcnt, 0.0
 		n3d_setpolygon 256, $444444, 16.0, 16.0 * lcnt, 0.0, 36.0, 16.0 * lcnt, 0.0, -512.0, 16.0 * lcnt, 0.0
 	loop
@@ -347,17 +399,11 @@ stop
 	//X(横線
 	repeat 96
 		lcnt = cnt - 40
-		n3d_setpolygon 256, $444444, 16.0 * lcnt - axistimer, -384.0 - x, 0.0,  16.0 * lcnt - axistimer, 512.0 - x, 0.0,  16.0 * lcnt - axistimer, 0.0 - x, 0.0
+		n3d_setpolygon 256, $444444, 16.0 * lcnt - axistimer, -384.0 - x, 0.0,  16.0 * lcnt - axistimer, 384.0 - x, 0.0,  16.0 * lcnt - axistimer, 0.0 - x, 0.0
 	loop
 	return
 
 *proc_enemy
-	repeat length(enem_avail)
-		if enem_avail(cnt) = 1{
-			n3dm_setModel enem_model(cnt), 512 + cnt, enem_y(cnt), enem_x(cnt), enem_z(cnt)
-			enem_y(cnt) -= airplane_speed
-		}
-	loop
 	repeat length(enem_avail)
 		if enem_avail(cnt) = 1{
 			ecnt = cnt
@@ -389,6 +435,13 @@ stop
 		}
 	loop
 	
+	repeat length(enem_avail)
+		if enem_avail(cnt) = 1{
+			n3dm_setModel enem_model(cnt), 512 + cnt, enem_y(cnt), enem_x(cnt), enem_z(cnt)
+			enem_y(cnt) -= airplane_speed
+		}
+	loop
+	
 	return
 
 *proc_f
@@ -406,7 +459,7 @@ stop
 				fx(cnt) -= airplane_speed
 			}
 			
-			n3d_deleteByGroup 1024 + cnt
+			//n3d_deleteByGroup 1024 + cnt
 			
 			n3d_setpolygon 1024 + cnt, $FFFFFF, fx(cnt), fy(cnt), fz(cnt),  fx(cnt) - fs(cnt), fy(cnt), fz(cnt),  fx(cnt), fy(cnt) - sqrt(fs(cnt) * 3 / 2), fz(cnt) - sqrt(fs(cnt) * 3 / 2)
 			n3d_rotateXByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),ft(cnt)
@@ -450,5 +503,36 @@ stop
 	if cammode = 0{
 		//n3d_setCameraPosition -48.0, 0.0 - x, -8.0 + z
 		//n3d_setpolygon 4096 + cnt, $FF0000, 0.0, -x - 0.25, z,   0.0, -x + 0.25, z,   256.0, -x, z
+	}
+	return
+
+*proc_title_viewship
+	vs_angle = vs_angle + 3
+	n3d_setpolygon 1536, $444444, -10.0, -10.0, 2.0,	-10.0, 10.0, 2.0,	 8.0, -10.0, 2.0
+	n3d_setpolygon 1536, $444444,   8.0,  10.0, 2.0,	-10.0, 10.0, 2.0,	 8.0, -10.0, 2.0
+	n3dm_setModel testplane, 1, 0, 0, 0
+	n3d_setCameraPosition cos(deg2rad(vs_angle)) * 24.0, sin(deg2rad(vs_angle)) * 24.0, -12.0
+	n3d_setCameraAngleByLookingAt 0.0, 0.0, 0.0
+	return
+
+
+*proc_titletext
+	taglab_add 320, 180, "SCRAMBLE BLAZE", 1
+	if camtime \ 96 < 32{
+		taglab_add 320, 240, "[Btn A] でスタート", 1
+	}else{
+		taglab_add 320, 240, "操作方法", 1
+		taglab_add 320, 280, "[←][↑][→][↓]で移動", 1
+		taglab_add 320, 320, "[Btn A]で発射", 1
+		taglab_add 320, 360, "[Btn L]で視点変更", 1
+	}
+	taglab_add 320, 440, "First Prototype", 1
+	taglab_add 320, 460, "(C)2023 nasTTY", 1
+	return
+
+*title_control
+	if KY_Z{
+		camtime = 0
+		cammode = 1
 	}
 	return

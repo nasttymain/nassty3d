@@ -1,0 +1,38 @@
+#module mod_taggedlabel
+	#deffunc taglab_init
+		 dim lab_avail		, 256
+		 dim lab_posx		, 256
+		 dim lab_posy		, 256
+		sdim lab_text,256	, 256
+		 dim lab_width		, 256
+		 dim lab_height		, 256
+		 dim lab_lifetime	, 256
+	return
+	#deffunc taglab_draw
+		font msgothic, 20
+		repeat length(lab_avail)
+			if lab_avail(cnt) = 1{
+				pos lab_posx(cnt) - lab_width(cnt) / 2, lab_posy(cnt) - lab_height(cnt) / 2
+				mes lab_text(cnt)
+				lab_lifetime(cnt) -= 1
+				if lab_lifetime(cnt) = 0{
+					lab_avail(cnt) = 0
+				}
+			}
+		loop
+	return
+	#deffunc taglab_add int x, int y, str s, int l
+		repeat length(lab_avail)
+			if lab_avail(cnt) = 0{
+				lab_avail(cnt) = 1
+				lab_posx(cnt) = x
+				lab_posy(cnt) = y
+				lab_text(cnt) = s
+				lab_lifetime(cnt) = l
+				lab_width(cnt) = strlen(s) * 10
+				lab_height(cnt) = 20
+				break
+			}
+		loop
+	return
+#global
