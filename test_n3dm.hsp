@@ -1,9 +1,11 @@
 #include "mod_joystick2.as"
 #include "libn3d.hsp"
 #include "mod_taggedlabel.hsp"
-#define FULLSCREEN 0
+#include "hspogg.as"
+#define FULLSCREEN 1
 
 #define JOYSTICK_PORT 0
+
 
 #define KY_LEFT		((ky&    1)>> 0)
 #define KY_UP 		((ky&    2)>> 1)
@@ -14,6 +16,24 @@
 
 *init
 	screen 0, 800, 800, SCREEN_HIDE
+	dmmini
+	dmmreset
+	#define SOUNDID_LASER 0
+	#define SOUNDID_BOXCRUSH 1
+	#define SOUNDID_FLYUP 16
+	#define SOUNDID_ENGINE 24
+	#define SOUNDS_BOXCRUSH_COUNT 5
+	dmmload "lasershot.wav", SOUNDID_LASER, 0
+	repeat SOUNDS_BOXCRUSH_COUNT
+		dmmload "boxcrush" + cnt + ".wav", SOUNDID_BOXCRUSH + cnt, 0
+	loop
+	dmmload "flyup.wav", SOUNDID_FLYUP, 0
+	dmmload "enginesound.wav", SOUNDID_ENGINE, 1
+	
+	dmmvol SOUNDID_FLYUP, -1000
+	dmmvol SOUNDID_ENGINE, -1000
+	dim control_nostick
+	control_nostick = 1
 	if FULLSCREEN = 0{
 		screen 1, 640, 480
 	}
@@ -25,11 +45,15 @@
 	}
 	
 	sdim testplane,65536
-	bload "testplane.n3dm",testplane
+	bload "testplane.n3dm", testplane
 	sdim laser,65536
-	bload "laser.n3dm",laser
+	bload "laser.n3dm", laser
 	sdim whitebox, 65536
 	bload "whitebox.n3dm", whitebox
+	sdim redbox, 65536
+	bload "redbox.n3dm", redbox
+	sdim octahedron, 65536
+	bload "octahedron.n3dm", octahedron
 	
 	//”wŒi¯
 	screen 2, 1600, 600, SCREEN_HIDE
@@ -42,6 +66,7 @@
 		circle x-s, y-s, x+s, y+s, 1
 	loop
 *start
+	dmmstop -1
 	n3d_initialize
 	n3dm_initialize
 	
@@ -67,10 +92,13 @@
 	
 	
 	dim bul_avail, 64
-	dim bul_x, 64
-	dim bul_y, 64
-	dim bul_z, 64
+	ddim bul_x, 64
+	ddim bul_y, 64
+	ddim bul_z, 64
+	dim bul_argphi, 64
+	dim bul_argtheta, 64
 	dim reshot
+	dim bul_lifetime, 64
 	
 	dim cammode
 	cammode = -1
@@ -80,8 +108,15 @@
 	dim  enem_avail	 	, 32
 	ddim enem_x			, 32
 	ddim enem_y			, 32
+	ddim enem_z			, 32
 	sdim enem_model,4096, 32
+	dim enem_maincolor	, 32
+	dim enem_type		, 32
+	ddim enem_stateattr	, 32
+	ddim enem_xs		, 32
+	ddim enem_ys		, 32
 	
+	dim fcol, 128
 	dim fa, 128
 	ddim fx, 128
 	ddim fy, 128
@@ -97,7 +132,7 @@
 	dim flt, 128
 	
 	dim airplane_speed
-	airplane_speed = 6
+	airplane_speed = 7
 	
 	dim airplane_manuever_avail
 	airplane_manuever_avail = 0
@@ -110,6 +145,30 @@
 	
 	dim game_reset
 	game_reset = 0
+	
+	dim game_stageclear
+	game_stageclear = 0
+	
+	dim game_over
+	game_over = 0
+	
+	dim texttimer
+	texttimer = 0
+	
+	dim game_score
+	game_score = 0
+	dim game_penalty
+	game_penalty = 0
+	
+	dim dosummonproc
+	dosummonproc = 0
+	dim summon_timer
+	summon_timer = 0
+	dim summonstyle
+	summonstyle = 0
+	
+	dim game_airplane_avail
+	game_airplane_avail = 1
 	
 *main
 	repeat
@@ -132,6 +191,7 @@
 			gosub *title_control
 			n3d_render
 		}else:if cammode >= 0{
+			gosub *proc_scene
 			gosub *proc_camera
 			gosub *proc_background
 			gosub *proc_axis
@@ -140,7 +200,14 @@
 			gosub *proc_starship
 			gosub *proc_bullet
 			gosub *proc_f
+			if game_score >= 50 and game_stageclear = 0{
+				game_stageclear = 1
+			}
 			n3d_render
+		}
+		
+		if game_stageclear != 0{
+			gosub *proc_gamecleartext
 		}
 		
 		camtime += 1
@@ -186,19 +253,30 @@ stop
 
 
 *proc_key
-	stick ky,15+2048
-	joyGetPosEx jky, JOYSTICK_PORT
-	if stat = 0{
-		dialog "Joystick Error"
-		end
+	ky_bef = ky
+	stick ky,262143
+	
+	
+	if control_nostick = 0{
+		joyGetPosEx jky, 0
+		if stat != 0{
+			dialog "Joystick Error\nTry NOSTICK=1"
+			end
+		}
 	}
+	
+	
+	
+	ky_trig = ky and (ky_bef xor 262133)
 	
 	return
 
 *proc_starship
 	if airplane_manuever_avail = 1{
-		kya = ky & (1 + 2 + 4 + 8 + 2048)
+		kya = ky// & (1 + 2 + 4 + 8 + 2048)
+		kya_trig = ky_trig
 	}else{
+		kya_trig = 0
 		if cammode = 1 and camtime >= 40{
 			kya = 4
 		}else:if cammode = 3 and axis_progress = 0{
@@ -260,8 +338,11 @@ stop
 			if bul_avail(cnt)=0{
 				bul_avail(cnt)=1
 				bul_x(cnt)= x - 5.0 * cos(deg2rad(roll))
-				bul_y(cnt)=/*y+*/15+rnd(4)
+				bul_y(cnt)=/*y+*/15.0+rnd(4)
 				bul_z(cnt) = z + 5.0 * sin(deg2rad(roll))
+				bul_argtheta(cnt) = int(pitch / 6)
+				bul_argphi(cnt) = -int(roll / 6)
+				bul_lifetime(cnt) = 0
 				break
 			}
 		loop
@@ -269,13 +350,18 @@ stop
 			if bul_avail(cnt)=0{
 				bul_avail(cnt)=1
 				bul_x(cnt)= x + 5.0 * cos(deg2rad(roll))
-				bul_y(cnt)=/*y+*/15+rnd(4)
+				bul_y(cnt)=/*y+*/15.0+rnd(4)
 				bul_z(cnt) = z - 5.0 * sin(deg2rad(roll))
+				bul_argtheta(cnt) = int(pitch / 6)
+				bul_argphi(cnt) = -int(roll / 6)
+				bul_lifetime(cnt) = 0
 				break
 			}
 		loop
+		dmmplay SOUNDID_LASER
 	}
 	reshot = limit(reshot-1, 0, 16)
+	
 	
 	if axis_progress = 0 and cammode = 3{
 		y -= airplane_speed * 2
@@ -283,23 +369,66 @@ stop
 	}else{
 		z = limitf(z, -100.0, 0.0)
 	}
+	if game_airplane_avail = 1{
+		repeat length(enem_avail)
+			ecnt = cnt
+			if absf(-x - enem_x(ecnt)) < 8.0 and absf(-(y + 8) - enem_y(ecnt)) < 8.0 and absf((z - 2) - enem_z(ecnt)) < 6.0 and enem_avail(ecnt) = 1{
+				game_over = 1
+				game_cameramode = 0
+				airplane_manuever_avail = 0
+				game_airplane_avail = 0
+				cammode = 6
+				camtime = 0
+				dmmplay SOUNDID_BOXCRUSH + rnd(SOUNDS_BOXCRUSH_COUNT)
+				repeat 24
+					gosub *function_f_findvacant
+					fx(t) = y + 8 + double(rnd(81) - 40)/2
+					fy(t) = - x + double(rnd(81) - 40)/2
+					fz(t) = z + double(rnd(21) - 10)/2
+					ft(t) = double(rnd(314)) / 100
+					fp(t) = double(rnd(314)) / 100
+					fa(t) = 1
+					fs(t) = rnd(8) + 4
+					fxs(t) = double(rnd(21) - 10)/10
+					fys(t) = double(rnd(21) - 10)/10
+					fzs(t) = double(rnd(21) - 10)/10
+					fts(t) = double(rnd(11) - 5) / 100
+					fps(t) = double(rnd(11) - 5) / 100
+					if rnd(2) = 0{
+						fcol(t) = $CCCCCC
+						fs(t) = rnd(8) + 6
+					}else{
+						fcol(t) = $FF4444
+					}
+					flt(t) = 0
+				loop
+			}
+		loop
+	}
 	
-	
-	n3dm_setModel testplane, 1, -y, -x, z
-	n3d_rotateXByGroup 1, -y, -x, z,  double(roll) * 2 * PI / 360//xr
-	n3d_rotateYByGroup 1, -y, -x, z, double(pitch) * 2 * PI / 360//yr
+	if game_airplane_avail = 1{
+		n3dm_setModel testplane, 1, -y, -x, z
+		n3d_rotateXByGroup 1, -y, -x, z,  double(roll) * 2 * PI / 360//xr
+		n3d_rotateYByGroup 1, -y, -x, z, double(pitch) * 2 * PI / 360//yr
+	}
 	return
 
 
 *proc_bullet
-	n3d_deleteByGroup 2
+	//n3d_deleteByGroup 2
 	repeat 64
 		if bul_avail(cnt)=1{
-			bul_y(cnt)-=24
+			bul_x(cnt) -= 24.0 * sin(deg2rad(90 + bul_argtheta(cnt))) * cos(deg2rad(90 + bul_argphi(cnt)))
+			bul_y(cnt) -= 24.0 * sin(deg2rad(90 + bul_argtheta(cnt))) * sin(deg2rad(90 + bul_argphi(cnt)))
+			if bul_lifetime(cnt) >= 1{
+				bul_z(cnt) -= 24.0 * cos(deg2rad(90 + bul_argtheta(cnt)))
+			}
 			n3dm_setModel laser, 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, bul_z(cnt)
-			if bul_y(cnt)<-480{
+			n3d_rotateXByGroup 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, bul_z(cnt), bul_argtheta(cnt)
+			if bul_y(cnt)<-640{
 				bul_avail(cnt)=0
 			}
+			bul_lifetime(cnt) += 1
 		}
 	loop
 	
@@ -309,6 +438,7 @@ stop
 *proc_camera
 	if cammode = 1{
 		if camtime <= 1{
+			dmmplay SOUNDID_ENGINE
 			taglab_add 320, 200, "READY?", 60
 			taglab_add 320, 260, "MISSION: “GEáŠQ•¨‚ð”j‰ó‚¹‚æ", 60
 			axis_progress = 1
@@ -326,14 +456,23 @@ stop
 				enem_y(cnt) = 512.0
 				enem_z(cnt) = -5.0 + abs(cnt - 1) * -20.0
 				enem_model(cnt) = whitebox
+				enem_maincolor(cnt) = $FFFFFF
+				enem_type(cnt) = 0
+				enem_stateattr(cnt) = 0.0
+				enem_xs(cnt) = 0.0
+				enem_ys(cnt) = 0.0
+				enem_zs(cnt) = 0.0
 			loop
 			sectime = camtime - 40
 			n3d_setCameraPosition 32.0 * cos(deg2rad(sectime * 3))- 16.0, 32.0 * sin(deg2rad(sectime * 3)) + 0.0 - x, 2.0 - (sectime) * 10 / 60 + z
 			n3d_setCameraAngleByLookingAt 0.0, -x, z
 		}
 		if camtime = 100{
+			game_cameramode = 0
 			cammode = 0
+			dosummonproc = 1
 			airplane_manuever_avail = 1
+			game_airplane_avail = 1
 		}
 	}
 	//camtime += 1
@@ -361,9 +500,15 @@ stop
 			cammode = 3
 			camtime = 0
 			airplane_manuever_avail = 0
+			dmmstop SOUNDID_ENGINE
+			dmmplay SOUNDID_FLYUP
 		}
 	}
 	if cammode = 3{
+		//gameclear, fly away
+		if camtime >= 120{
+			game_reset = 1
+		}
 		axis_progress = 0
 		n3d_setCameraAngleByLookingAt -y, -x, z
 	}
@@ -371,14 +516,30 @@ stop
 	t = t + deg2rad(double(-pitch) / 5)
 	c_sightt@nastty3d = t
 	
-	if ky&64{
+	if cammode = 6{
+		sectime = camtime
+		taglab_add 320, 240, "GAME OVER", 1
+		//gameover
+		if camtime <= 30{
+			n3d_setCameraPosition 48.0 * cos(deg2rad(180 - sectime * 5))- 0.0, 32.0 * sin(deg2rad(180 - sectime * 5)) + 0.0 - x, -8.0 + z
+			n3d_setCameraAngleByLookingAt 0.0, -x, z
+		}else{
+			sectime = 30
+			n3d_setCameraPosition 48.0 * cos(deg2rad(180 - sectime * 5))- 0.0, 32.0 * sin(deg2rad(180 - sectime * 5)) + 0.0 - x, -8.0 + z
+			n3d_setCameraAngleByLookingAt 0.0, -x, z
+		}
+		if camtime >= 80{
+			game_reset = 1
+		}
+	}
+	
+	if ky_trig & 64{
 		game_cameramode = (game_cameramode + 1) \ 2
 	}
 	
 	if ky&1024{
-		game_reset = 1
-		//cammode = 2
-		//camtime = 0
+		//game_stageclear = 1
+		//game_reset = 1
 	}
 	
 	return
@@ -394,6 +555,7 @@ stop
 		}
 		n3d_setpolygon 256, $444444, 32.0, 16.0 * lcnt, 0.0, 	256.0, 16.0 * lcnt, 0.0, 	128.0, 16.0 * lcnt, 0.0
 		//n3d_setpolygon 256, $444444, 64.0, 16.0 * lcnt, 0.0,  8.0, 16.0 * lcnt, 0.0,  0.0, 16.0 * lcnt, 0.0
+		
 		n3d_setpolygon 256, $444444, 16.0, 16.0 * lcnt, 0.0, 36.0, 16.0 * lcnt, 0.0, -512.0, 16.0 * lcnt, 0.0
 	loop
 	if axis_progress = 1{
@@ -413,16 +575,19 @@ stop
 			repeat length(bul_avail)
 				if bul_avail(cnt) = 1{
 					if absf(-bul_x(cnt) - enem_x(ecnt)) < 10.0 and absf(-bul_y(cnt) - enem_y(ecnt)) < 26.0 and absf(bul_z(cnt) - enem_z(ecnt)) < 10.0 and enem_avail(ecnt) = 1{
-						logmes ecnt
+						
+						//”j‰ó
+						game_score += 1
 						enem_avail(ecnt) = 0
 						bul_avail(cnt) = 0
+						dmmplay SOUNDID_BOXCRUSH + rnd(SOUNDS_BOXCRUSH_COUNT)
 						repeat 8
 							gosub *function_f_findvacant
 							fx(t) = enem_y(ecnt)
 							fy(t) = enem_x(ecnt) + double(rnd(21) - 10)/2
 							fz(t) = enem_z(ecnt) + double(rnd(21) - 10)/2
-							ft(t) = double(rnd(157)) / 100
-							fp(t) = double(rnd(157)) / 100
+							ft(t) = double(rnd(314)) / 100
+							fp(t) = double(rnd(314)) / 100
 							fa(t) = 1
 							fs(t) = rnd(6) + 6
 							fxs(t) = double(rnd(21) - 10)/10
@@ -430,6 +595,7 @@ stop
 							fzs(t) = double(rnd(21) - 10)/10
 							fts(t) = double(rnd(11) - 5) / 100
 							fps(t) = double(rnd(11) - 5) / 100
+							fcol(t) = enem_maincolor(ecnt)
 							flt(t) = 0
 						loop
 					}
@@ -440,11 +606,108 @@ stop
 	
 	repeat length(enem_avail)
 		if enem_avail(cnt) = 1{
+			enem_x(cnt) += enem_xs(cnt)
+			enem_y(cnt) += enem_ys(cnt)
+			enem_z(cnt) += enem_zs(cnt)
+			if enem_type(cnt) = 1{
+				enem_stateattr(cnt) = (enem_stateattr(cnt) + 0.1) \ (2 * pi)
+				if absf(enem_stateattr(cnt) - (pi * 3 / 4)) < (pi / 10){
+					if absf((enem_stateattr(cnt) \ 0.5) - 0.5) < 0.1{
+						gosub *function_enem_findvacant
+						//“G‚ð‘Å‚¿o‚·
+						enem_avail(t) = 1
+						enem_x(t) = enem_x(cnt)
+						enem_y(t) = enem_y(cnt)
+						enem_z(t) = enem_z(cnt)
+						enem_maincolor(t) = $FF0000
+						enem_model(t) = redbox
+						enem_type(t) = 0
+						d = sqrt((x - enem_x(cnt)) * (x - enem_x(cnt)) + (y - enem_y(cnt)) * (y - enem_y(cnt)) + (z - enem_z(cnt)) * (z - enem_z(cnt)))
+						if d = 0.0{
+							enem_xs(t) = 0.0
+							enem_ys(t) = -1.0
+							enem_zs(t) = 0.0
+						}else{
+							enem_xs(t) = atan(-enem_x(cnt) - x, d) * airplane_speed
+							enem_ys(t) = -1.0
+							enem_zs(t) = atan(z - enem_z(cnt), d) * airplane_speed
+						}
+					}
+				}
+			}
+			
+			if enem_y(cnt) < -256{
+				enem_avail(cnt) = 0
+				game_penalty += 1
+			}
 			n3dm_setModel enem_model(cnt), 512 + cnt, enem_y(cnt), enem_x(cnt), enem_z(cnt)
+			n3d_rotateZByGroup 512 + cnt, enem_y(cnt), enem_x(cnt), enem_z(cnt), enem_stateattr(cnt)
 			enem_y(cnt) -= airplane_speed
 		}
 	loop
+
+	if dosummonproc = 1{
+		if game_score > 15{
+			summonstyle = 1
+		}
+		if summontimer <= 0{
+			if summonstyle = 0{
+				summontimer = rnd(32) + 8
+				gosub *function_enem_findvacant
+				//logmes t
+				//“G1
+				enem_avail(t) = 1
+				enem_x(t) = double(rnd(129) - 64)
+				enem_y(t) = 768.0
+				enem_z(t) = -double(rnd(100))
+				enem_maincolor(t) = $FFFFFF
+				enem_model(t) = whitebox
+				enem_type(t) = 0
+				enem_xs(t) = 0.0
+				enem_ys(t) = 0.0
+				enem_zs(t) = 0.0
+			}
+			if summonstyle = 1{
+				summontimer = rnd(40) - (game_score / 5) + 3
+				gosub *function_enem_findvacant
+				//logmes t
+				enem_avail(t) = 1
+				enem_x(t) = double(rnd(129) - 64)
+				enem_y(t) = 768.0
+				enem_z(t) = -double(rnd(100))
+				enem_xs(t) = 0.0
+				enem_ys(t) = 0.0
+				enem_zs(t) = 0.0
+				if rnd(3) = 0{
+					//“G2
+					enem_model(t) = octahedron
+					enem_type(t) = 1
+					enem_maincolor(t) = $FF4444
+					enem_stateattr(t) = double(rnd(314))/100
+				}else{
+					//“G1
+					enem_model(t) = whitebox
+					enem_type(t) = 0
+					enem_maincolor(t) = $FFFFFF
+					enem_stateattr(t) = 0.0
+				}
+			}
+		}
+		summontimer -= 1
+	}
 	
+	taglab_add 560, 460, "Œ‚”j”: "+strf("%2d", game_score), 1
+	
+	
+	return
+*function_enem_findvacant
+	t = 0
+	repeat length(enem_avail)
+		if enem_avail(cnt) = 0{
+			t = cnt
+			break
+		}
+	loop
 	return
 
 *proc_f
@@ -464,7 +727,7 @@ stop
 			
 			//n3d_deleteByGroup 1024 + cnt
 			
-			n3d_setpolygon 1024 + cnt, $FFFFFF, fx(cnt), fy(cnt), fz(cnt),  fx(cnt) - fs(cnt), fy(cnt), fz(cnt),  fx(cnt), fy(cnt) - sqrt(fs(cnt) * 3 / 2), fz(cnt) - sqrt(fs(cnt) * 3 / 2)
+			n3d_setpolygon 1024 + cnt, fcol(cnt), fx(cnt), fy(cnt), fz(cnt),  fx(cnt) - fs(cnt), fy(cnt), fz(cnt),  fx(cnt), fy(cnt) - sqrt(fs(cnt) * 3 / 2), fz(cnt) - sqrt(fs(cnt) * 3 / 2)
 			n3d_rotateXByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),ft(cnt)
 			n3d_rotateYByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
 			if flt(cnt) \ 10 = 9{
@@ -521,8 +784,13 @@ stop
 
 *proc_titletext
 	taglab_add 320, 180, "SCRAMBLE BLAZE", 1
-	if camtime \ 96 < 32{
+	if camtime \ 160 < 32{
 		taglab_add 320, 240, "[Btn A] ‚ÅƒXƒ^[ƒg", 1
+	}else:if camtime\160<96{
+		taglab_add 320, 240, "‘€ì•û–@", 1
+		taglab_add 320, 280, "[©][ª][¨][«]‚ÅˆÚ“®", 1
+		taglab_add 320, 320, "[Z]‚Å”­ŽË", 1
+		taglab_add 320, 360, "[LCTRL]‚ÅŽ‹“_•ÏX", 1
 	}else{
 		taglab_add 320, 240, "‘€ì•û–@", 1
 		taglab_add 320, 280, "[©][ª][¨][«]‚ÅˆÚ“®", 1
@@ -534,8 +802,54 @@ stop
 	return
 
 *title_control
-	if KY_Z{
+	if ky_trig & 2048{//Z
 		camtime = 0
 		cammode = 1
 	}
+	return
+
+
+*proc_scene
+	if game_stageclear = 1{
+		dosummonproc = 0
+		game_stageclear = 2
+		texttimer = 0
+		cammode = 2
+		camtime = 0
+	}
+	return
+
+
+*proc_gamecleartext
+	if texttimer >= 0{
+		taglab_add 320, 160, "CLEAR!", 1
+	}
+	if texttimer >= 40{
+		taglab_add 320, 220, "       ”j‰ó‚µ‚½•¨‘Ì: "+strf("%8d", game_score), 1
+	}
+	//game_penalty
+	if texttimer >= 60{
+		if texttimer = 60{
+			if (game_penalty + game_score) = 0{
+				message_percentage = 0
+			}else{
+				message_percentage = game_score * 100 / (game_penalty + game_score)
+			}
+		}
+		taglab_add 320, 260, "             Œ‚”j—¦: "+strf("%6d", message_percentage) + " %", 1
+	}
+	if texttimer >= 80{
+		taglab_add 320, 300, " ‘¼‚É‘‚­‚±‚Æ‚ª–³‚¢: "+strf("%8d", 123456), 1
+	}
+	
+	if texttimer >= 100{
+		taglab_add 320, 340, "         rnd(32767): "+strf("%8d", rnd(32767)), 1
+	}
+	
+	if texttimer >= 120{
+		taglab_add 320, 380, "                1”N: "+strf("%5d", 365) + "“ú", 1
+	}
+	
+	logmes texttimer
+	texttimer += 1
 	return
