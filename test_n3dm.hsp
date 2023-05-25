@@ -192,6 +192,7 @@ stop
 		dialog "Joystick Error"
 		end
 	}
+	
 	return
 
 *proc_starship
@@ -308,6 +309,8 @@ stop
 *proc_camera
 	if cammode = 1{
 		if camtime <= 1{
+			taglab_add 320, 200, "READY?", 60
+			taglab_add 320, 260, "MISSION: “GEáŠQ•¨‚ð”j‰ó‚¹‚æ", 60
 			axis_progress = 1
 		}
 		if camtime < 40{
