@@ -200,7 +200,8 @@
 			gosub *proc_starship
 			gosub *proc_bullet
 			gosub *proc_f
-			if game_score >= 50 and game_stageclear = 0{
+			if game_score >= 60 and game_stageclear = 0 and game_over = 0{
+				//ゲームクリア条件
 				game_stageclear = 1
 			}
 			n3d_render
@@ -277,7 +278,7 @@ stop
 		kya_trig = ky_trig
 	}else{
 		kya_trig = 0
-		if cammode = 1 and camtime >= 40{
+		if cammode = 1 and camtime >= 40 and camtime <= 100{
 			kya = 4
 		}else:if cammode = 3 and axis_progress = 0{
 			kya = 2
@@ -369,7 +370,7 @@ stop
 	}else{
 		z = limitf(z, -100.0, 0.0)
 	}
-	if game_airplane_avail = 1{
+	if game_airplane_avail = 1 and game_stageclear = 0{
 		repeat length(enem_avail)
 			ecnt = cnt
 			if absf(-x - enem_x(ecnt)) < 8.0 and absf(-(y + 8) - enem_y(ecnt)) < 8.0 and absf((z - 2) - enem_z(ecnt)) < 6.0 and enem_avail(ecnt) = 1{
@@ -439,8 +440,7 @@ stop
 	if cammode = 1{
 		if camtime <= 1{
 			dmmplay SOUNDID_ENGINE
-			taglab_add 320, 200, "READY?", 60
-			taglab_add 320, 260, "MISSION: 敵・障害物を破壊せよ", 60
+			taglab_add 320, 240, "MISSION: 敵・障害物を破壊せよ", 80
 			axis_progress = 1
 		}
 		if camtime < 40{
@@ -453,7 +453,7 @@ stop
 			repeat 3
 				enem_avail(cnt) = 1
 				enem_x(cnt) = 32.0 * cnt - 32.0
-				enem_y(cnt) = 512.0
+				enem_y(cnt) = 640.0
 				enem_z(cnt) = -5.0 + abs(cnt - 1) * -20.0
 				enem_model(cnt) = whitebox
 				enem_maincolor(cnt) = $FFFFFF
@@ -467,9 +467,18 @@ stop
 			n3d_setCameraPosition 32.0 * cos(deg2rad(sectime * 3))- 16.0, 32.0 * sin(deg2rad(sectime * 3)) + 0.0 - x, 2.0 - (sectime) * 10 / 60 + z
 			n3d_setCameraAngleByLookingAt 0.0, -x, z
 		}
+		/*if camtime > 100 and camtime <= 120{
+			sectime = 60
+			n3d_setCameraPosition 32.0 * cos(deg2rad(sectime * 3))- 16.0, 32.0 * sin(deg2rad(sectime * 3)) + 0.0 - x, 2.0 - (sectime) * 10 / 60 + z
+			n3d_setCameraAngleByLookingAt 0.0, -x, z
+		}*/
+		if camtime = 80{
+			taglab_add 320, 200, "READY?", 40
+		}
 		if camtime = 100{
 			game_cameramode = 0
 			cammode = 0
+			camtime = 0
 			dosummonproc = 1
 			airplane_manuever_avail = 1
 			game_airplane_avail = 1
@@ -477,6 +486,9 @@ stop
 	}
 	//camtime += 1
 	if cammode = 0{
+		if camtime = 20{
+			taglab_add 320, 200, "LET'S GO!", 30
+		}
 		if game_cameramode = 0{
 			n3d_setCameraPosition -48.0, 0.0 - x, -8.0 + z
 			n3d_setCameraAngleByLookingAt 0.0, -x, z
@@ -581,7 +593,7 @@ stop
 						enem_avail(ecnt) = 0
 						bul_avail(cnt) = 0
 						dmmplay SOUNDID_BOXCRUSH + rnd(SOUNDS_BOXCRUSH_COUNT)
-						repeat 8
+						repeat 6
 							gosub *function_f_findvacant
 							fx(t) = enem_y(ecnt)
 							fy(t) = enem_x(ecnt) + double(rnd(21) - 10)/2
@@ -593,8 +605,8 @@ stop
 							fxs(t) = double(rnd(21) - 10)/10
 							fys(t) = double(rnd(21) - 10)/10
 							fzs(t) = double(rnd(21) - 10)/10
-							fts(t) = double(rnd(11) - 5) / 100
-							fps(t) = double(rnd(11) - 5) / 100
+							fts(t) = double(rnd(15) - 7) / 100
+							fps(t) = double(rnd(15) - 7) / 100
 							fcol(t) = enem_maincolor(ecnt)
 							flt(t) = 0
 						loop
@@ -727,10 +739,7 @@ stop
 			
 			//n3d_deleteByGroup 1024 + cnt
 			
-			n3d_setpolygon 1024 + cnt, fcol(cnt), fx(cnt), fy(cnt), fz(cnt),  fx(cnt) - fs(cnt), fy(cnt), fz(cnt),  fx(cnt), fy(cnt) - sqrt(fs(cnt) * 3 / 2), fz(cnt) - sqrt(fs(cnt) * 3 / 2)
-			n3d_rotateXByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),ft(cnt)
-			n3d_rotateYByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
-			if flt(cnt) \ 10 = 9{
+			if flt(cnt) \ 8 = 7{
 				fs(cnt) -= 1
 				if fs(cnt) = 0{
 					fa(cnt) = 0
@@ -738,6 +747,14 @@ stop
 			}
 			if flt(cnt) > 128{
 				fa(cnt) = 0
+			}
+			if fx(cnt) < -16 and cammode = 0{
+				fa(cnt) = 0
+			}
+			n3d_setpolygon 1024 + cnt, fcol(cnt), fx(cnt), fy(cnt), fz(cnt),  fx(cnt) - fs(cnt), fy(cnt), fz(cnt),  fx(cnt), fy(cnt) - sqrt(fs(cnt) * 3 / 2), fz(cnt) - sqrt(fs(cnt) * 3 / 2)
+			if cammode != 0 or fx(cnt) >= 0{
+				n3d_rotateXByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),ft(cnt)
+				n3d_rotateYByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
 			}
 		}else{
 		}
@@ -784,18 +801,20 @@ stop
 
 *proc_titletext
 	taglab_add 320, 180, "SCRAMBLE BLAZE", 1
-	if camtime \ 160 < 32{
+	if camtime \ 192 < 32{
 		taglab_add 320, 240, "[Btn A] でスタート", 1
-	}else:if camtime\160<96{
+	}else:if camtime \ 192 < 96{
+		taglab_add 320, 240, "操作方法", 1
+		taglab_add 320, 280, "[←][↑][→][↓]で移動", 1
+		taglab_add 320, 320, "[Btn A]で発射", 1
+		taglab_add 320, 360, "[Btn L]で視点変更", 1
+	}else:if camtime \ 192 < 160{
 		taglab_add 320, 240, "操作方法", 1
 		taglab_add 320, 280, "[←][↑][→][↓]で移動", 1
 		taglab_add 320, 320, "[Z]で発射", 1
 		taglab_add 320, 360, "[LCTRL]で視点変更", 1
 	}else{
-		taglab_add 320, 240, "操作方法", 1
-		taglab_add 320, 280, "[←][↑][→][↓]で移動", 1
-		taglab_add 320, 320, "[Btn A]で発射", 1
-		taglab_add 320, 360, "[Btn L]で視点変更", 1
+		taglab_add 320, 240, "[Z] でスタート", 1
 	}
 	taglab_add 320, 440, "First Prototype", 1
 	taglab_add 320, 460, "(C)2023 nasTTY", 1
@@ -847,7 +866,7 @@ stop
 	}
 	
 	if texttimer >= 120{
-		taglab_add 320, 380, "                1年: "+strf("%5d", 365) + "日", 1
+		taglab_add 320, 380, "                1年: "+strf("%5d", 365) + " 日", 1
 	}
 	
 	logmes texttimer
