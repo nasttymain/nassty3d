@@ -89,6 +89,14 @@
 		dim onscreen_flag
 		dim current_polygon
 		
+		dim cldecay_avail
+		cldecay_avail = 1
+		dim cldecay_offset
+		cldecay_offset = 128
+		ddim cldecay_gradient
+		cldecay_gradient = 0.0012
+		ddim cldecay_ratio
+		
 		#define CLOSEST_DISTANCE 0.0
 		
 		
@@ -285,7 +293,12 @@
 //					}else{
 				if SIGN(psd1) = 1 and SIGN(psd2) = 1 and SIGN(psd3) = 1 and tooclose = 0{
 						onscreen_flag=1
-						rgbcolor p_col(ncnt)
+						if cldecay_avail = 0{
+							color p_col(ncnt) / 65536, p_col(ncnt) \ 65536 / 256, p_col(ncnt) \ 256
+						}else{
+							cldecay_ratio = limitf(1.0 - limitf(pzsort(cnt) - cldecay_offset, 0.0) * cldecay_gradient, 0.0, 1.0)
+							color cldecay_ratio * (p_col(ncnt) / 65536), cldecay_ratio * (p_col(ncnt) \ 65536 / 256), cldecay_ratio * (p_col(ncnt) \ 256)
+						}
 						trianglef dx1,dy1,dx2,dy2,dx3,dy3
 						if polyedge=1 & p_group(ncnt)!=15{
 							rgbcolor 16777215
@@ -390,30 +403,32 @@
 						//logmes "" + ovl12 + " " + ovl13 + " " + ovl23
 						//logmes strf("%.2f %.2f  %.2f %.2f  %.2f %.2f", dx12, dy12, dx13, dy13, dx23, dy23)
 						//---------------------------------------------------------
+						if cldecay_avail = 0{
+							color p_col(ncnt) / 65536, p_col(ncnt) \ 65536 / 256, p_col(ncnt) \ 256
+						}else{
+							cldecay_ratio = limitf(1.0 - limitf(pzsort(cnt) - cldecay_offset, 0.0) * cldecay_gradient, 0.0, 1.0)
+							color cldecay_ratio * (p_col(ncnt) / 65536), cldecay_ratio * (p_col(ncnt) \ 65536 / 256), cldecay_ratio * (p_col(ncnt) \ 256)
+						}
 						if  SIGN(psd1) = 1 and SIGN(psd2) = -1 and SIGN(psd3) = -1 and tooclose12 = 0 and tooclose13 = 0{
 							onscreen_flag=1
-							rgbcolor p_col(ncnt)
 							//logmes "+--"
 							trianglef dx1,dy1,dx12,dy12,dx13,dy13
 						}
 						//---------------------------------------------------------
 						if  SIGN(psd1) = -1 and SIGN(psd2) = 1 and SIGN(psd3) = -1 and tooclose12 = 0 and tooclose23 = 0{
 							onscreen_flag=1
-							rgbcolor p_col(ncnt)
 							//logmes "-+-"
 							trianglef dx2,dy2,dx12,dy12,dx23,dy23
 						}
 						//---------------------------------------------------------
 						if  SIGN(psd1) = -1 and SIGN(psd2) = -1 and SIGN(psd3) = 1 and tooclose13 = 0 and tooclose23 = 0{
 							onscreen_flag=1
-							rgbcolor p_col(ncnt)
 							//logmes "--+"
 							trianglef dx3,dy3,dx13,dy13,dx23,dy23
 						}
 						//---------------------------------------------------------
 						if  SIGN(psd1) = 1 and SIGN(psd2) = 1 and SIGN(psd3) = -1 and tooclose13 = 0 and tooclose23 = 0{
 							onscreen_flag=1
-							rgbcolor p_col(ncnt)
 							//logmes "++-"
 							trianglef dx13, dy13, dx23, dy23, dx1, dy1
 							trianglef dx23, dy23, dx2, dy2, dx1, dy1
@@ -421,7 +436,6 @@
 						//---------------------------------------------------------
 						if  SIGN(psd1) = -1 and SIGN(psd2) = 1 and SIGN(psd3) = 1 and tooclose13 = 0 and tooclose12 = 0{
 							onscreen_flag=1
-							rgbcolor p_col(ncnt)
 							//logmes "-++"
 							trianglef dx13, dy13, dx12, dy12, dx2, dy2
 							trianglef dx13, dy13, dx2, dy2, dx3, dy3
@@ -429,7 +443,6 @@
 						//---------------------------------------------------------
 						if  SIGN(psd1) = 1 and SIGN(psd2) = -1 and SIGN(psd3) = 1 and tooclose12 = 0 and tooclose23 = 0{
 							onscreen_flag=1
-							rgbcolor p_col(ncnt)
 							//logmes "+-+"
 							trianglef dx12, dy12, dx23, dy23, dx1, dy1
 							trianglef dx23, dy23, dx1, dy1, dx3, dy3
