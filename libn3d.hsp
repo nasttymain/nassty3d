@@ -89,6 +89,7 @@
 		dim onscreen_flag
 		dim current_polygon
 		
+		//遠方の黒化
 		dim cldecay_avail
 		cldecay_avail = 1
 		dim cldecay_offset
@@ -98,6 +99,11 @@
 		ddim cldecay_ratio
 		
 		#define CLOSEST_DISTANCE 0.0
+		
+		//最後にセットされたポリゴンのID
+		dim lastset_id
+		lastset_id = 0
+		#define global N3D_LASTSET lastset_id@nastty3d
 		
 		
 	return 0
@@ -508,6 +514,7 @@
 				p_x3(cnt)=double(x3)
 				p_y3(cnt)=double(y3)
 				p_z3(cnt)=double(z3)
+				lastset_id = cnt
 				break
 			}
 		loop
@@ -598,6 +605,75 @@
 		loop
 	return 0
 //-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_rotateXById int id, double std_x, double std_y, double std_z, double rotation
+//		repeat length(p_avail)
+//			if p_avail(cnt)=1{
+//				if p_group(cnt)=group{
+					
+					p_ny1=(p_y1(id)-std_y)*cos(rotation) - (p_z1(id)-std_z)*sin(rotation) + std_y
+					p_nz1=(p_y1(id)-std_y)*sin(rotation) + (p_z1(id)-std_z)*cos(rotation) + std_z
+					p_ny2=(p_y2(id)-std_y)*cos(rotation) - (p_z2(id)-std_z)*sin(rotation) + std_y
+					p_nz2=(p_y2(id)-std_y)*sin(rotation) + (p_z2(id)-std_z)*cos(rotation) + std_z
+					p_ny3=(p_y3(id)-std_y)*cos(rotation) - (p_z3(id)-std_z)*sin(rotation) + std_y
+					p_nz3=(p_y3(id)-std_y)*sin(rotation) + (p_z3(id)-std_z)*cos(rotation) + std_z
+					
+					p_y1(id)=p_ny1
+					p_z1(id)=p_nz1
+					p_y2(id)=p_ny2
+					p_z2(id)=p_nz2
+					p_y3(id)=p_ny3
+					p_z3(id)=p_nz3
+//				}
+//			}
+//		loop
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_rotateYById int id, double std_x, double std_y, double std_z, double rotation
+//		repeat length(p_avail)
+//			if p_avail(cnt)=1{
+//				if p_group(cnt)=group{
+					
+					p_nx1=(p_x1(id)-std_x)*cos(rotation) - (p_z1(id)-std_z)*sin(rotation) + std_x
+					p_nz1=(p_x1(id)-std_x)*sin(rotation) + (p_z1(id)-std_z)*cos(rotation) + std_z
+					p_nx2=(p_x2(id)-std_x)*cos(rotation) - (p_z2(id)-std_z)*sin(rotation) + std_x
+					p_nz2=(p_x2(id)-std_x)*sin(rotation) + (p_z2(id)-std_z)*cos(rotation) + std_z
+					p_nx3=(p_x3(id)-std_x)*cos(rotation) - (p_z3(id)-std_z)*sin(rotation) + std_x
+					p_nz3=(p_x3(id)-std_x)*sin(rotation) + (p_z3(id)-std_z)*cos(rotation) + std_z
+					
+					p_x1(id)=p_nx1
+					p_z1(id)=p_nz1
+					p_x2(id)=p_nx2
+					p_z2(id)=p_nz2
+					p_x3(id)=p_nx3
+					p_z3(id)=p_nz3
+//				}
+//			}
+//		loop
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+	#deffunc n3d_rotateZById int id, double std_x, double std_y, double std_z, double rotation
+//		repeat length(p_avail)
+//			if p_avail(id)=1{
+//				if p_group(id)=group{
+					
+					p_nx1=(p_x1(id)-std_x)*cos(rotation) - (p_y1(id)-std_y)*sin(rotation) + std_x
+					p_ny1=(p_x1(id)-std_x)*sin(rotation) + (p_y1(id)-std_y)*cos(rotation) + std_y
+					p_nx2=(p_x2(id)-std_x)*cos(rotation) - (p_y2(id)-std_y)*sin(rotation) + std_x
+					p_ny2=(p_x2(id)-std_x)*sin(rotation) + (p_y2(id)-std_y)*cos(rotation) + std_y
+					p_nx3=(p_x3(id)-std_x)*cos(rotation) - (p_y3(id)-std_y)*sin(rotation) + std_x
+					p_ny3=(p_x3(id)-std_x)*sin(rotation) + (p_y3(id)-std_y)*cos(rotation) + std_y
+					
+					p_x1(id)=p_nx1
+					p_y1(id)=p_ny1
+					p_x2(id)=p_nx2
+					p_y2(id)=p_ny2
+					p_x3(id)=p_nx3
+					p_y3(id)=p_ny3
+//				}
+//			}
+//		loop
+	return 0
+//-----------------------------------------------------------------------------------------------------------------------------
 	#define global N3D_POLYGON_EDGE polyedge@nastty3d
 //-----------------------------------------------------------------------------------------------------------------------------
 #global
@@ -615,6 +691,7 @@
 	sdim ol,65536
 	sdim elem,16,16
 return 0
+//-----------------------------------------------------------------------------------------------------------------------------
 #deffunc n3dm_setModel str modeldata, int group, double xposition, double yposition, double zposition
 	//xrotation: x固定、y:z可変
 	n3d_deleteByGroup group
@@ -634,6 +711,31 @@ return 0
 		y3=double(elem(8))+yposition
 		z3=double(elem(9))+zposition
 		n3d_setPolygon group, int(elem(0)), x1, y1, z1, x2, y2, z2, x3, y3, z3
+	loop
+return 0
+//-----------------------------------------------------------------------------------------------------------------------------
+#deffunc n3dm_setModelAndRotate str modeldata, int group, double xposition, double yposition, double zposition, double xrotation, double yrotation, double zrotation
+	//xrotation: x固定、y:z可変
+	n3d_deleteByGroup group
+	src=modeldata
+	notesel src
+	repeat notemax
+		noteget ol,cnt
+		split ol," ",elem
+		//n3d_setPolygon group, int(elem(0)), double(elem(1))+xposition, double(elem(2))+yposition, double(elem(3))+zposition, double(elem(4))+xposition, double(elem(5))+yposition, double(elem(6))+zposition, double(elem(7))+xposition, double(elem(8))+yposition, double(elem(9))+zposition
+		x1=double(elem(1))+xposition
+		y1=double(elem(2))+yposition
+		z1=double(elem(3))+zposition
+		x2=double(elem(4))+xposition
+		y2=double(elem(5))+yposition
+		z2=double(elem(6))+zposition
+		x3=double(elem(7))+xposition
+		y3=double(elem(8))+yposition
+		z3=double(elem(9))+zposition
+		n3d_setPolygon group, int(elem(0)), x1, y1, z1, x2, y2, z2, x3, y3, z3
+		n3d_rotateXById N3D_LASTSET, xposition, yposition, zposition, xrotation
+		n3d_rotateYById N3D_LASTSET, xposition, yposition, zposition, yrotation
+		n3d_rotateZById N3D_LASTSET, xposition, yposition, zposition, zrotation
 	loop
 return 0
 //-----------------------------------------------------------------------------------------------------------------------------

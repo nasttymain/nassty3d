@@ -364,7 +364,7 @@ stop
 				bul_x(cnt)= x - 5.0 * cos(deg2rad(roll))
 				bul_y(cnt)=/*y+*/15.0+rnd(4)
 				bul_z(cnt) = z + 5.0 * sin(deg2rad(roll))
-				bul_argtheta(cnt) = int(pitch / 6)
+				bul_argtheta(cnt) = int(pitch / 4)
 				bul_argphi(cnt) = -int(roll / 6)
 				bul_lifetime(cnt) = 0
 				break
@@ -376,7 +376,7 @@ stop
 				bul_x(cnt)= x + 5.0 * cos(deg2rad(roll))
 				bul_y(cnt)=/*y+*/15.0+rnd(4)
 				bul_z(cnt) = z - 5.0 * sin(deg2rad(roll))
-				bul_argtheta(cnt) = int(pitch / 6)
+				bul_argtheta(cnt) = int(pitch / 4)
 				bul_argphi(cnt) = -int(roll / 6)
 				bul_lifetime(cnt) = 0
 				break
@@ -448,8 +448,8 @@ stop
 			if bul_lifetime(cnt) >= 1{
 				bul_z(cnt) -= 24.0 * cos(deg2rad(90 + bul_argtheta(cnt)))
 			}
-			n3dm_setModel laser, 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, bul_z(cnt)
-			n3d_rotateXByGroup 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, bul_z(cnt), bul_argtheta(cnt)
+			n3dm_setModelAndRotate laser, 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, bul_z(cnt), 0.0, deg2rad(bul_argtheta(cnt)), 0.0
+			//n3d_rotateXByGroup 100+cnt, -bul_y(cnt),-bul_x(cnt)-0.2, bul_z(cnt), bul_argtheta(cnt)
 			if bul_y(cnt)<-640{
 				bul_avail(cnt)=0
 			}
@@ -619,7 +619,7 @@ stop
 						enem_avail(ecnt) = 0
 						bul_avail(cnt) = 0
 						dmmplay SOUNDID_BOXCRUSH + rnd(SOUNDS_BOXCRUSH_COUNT)
-						repeat 4
+						repeat 6
 							gosub *function_f_findvacant
 							fx(t) = enem_y(ecnt)
 							fy(t) = enem_x(ecnt) + double(rnd(21) - 10)/2
@@ -778,9 +778,11 @@ stop
 				fa(cnt) = 0
 			}
 			n3d_setpolygon 1024 + cnt, fcol(cnt), fx(cnt), fy(cnt), fz(cnt),  fx(cnt) - fs(cnt), fy(cnt), fz(cnt),  fx(cnt), fy(cnt) - sqrt(fs(cnt) * 3 / 2), fz(cnt) - sqrt(fs(cnt) * 3 / 2)
+			n3d_rotateXById N3D_LASTSET, fx(cnt), fy(cnt), fz(cnt),ft(cnt)
+			n3d_rotateYById N3D_LASTSET, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
 			if cammode != 0 or fx(cnt) >= 0{
-				n3d_rotateXByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),ft(cnt)
-				n3d_rotateYByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
+				//n3d_rotateXByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),ft(cnt)
+				//n3d_rotateYByGroup 1024 + cnt, fx(cnt), fy(cnt), fz(cnt),fp(cnt)
 			}
 		}else{
 		}
