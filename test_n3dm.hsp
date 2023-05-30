@@ -289,7 +289,7 @@ stop
 		}
 	}
 	
-	logmes ky
+	//logmes ky
 	
 	ky_trig = ky and (ky_bef xor 262133)
 	
