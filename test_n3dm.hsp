@@ -16,6 +16,7 @@
 #define KY_DOWN		((ky&    8)>> 3)
 #define KY_Z		((ky& 2048)>>11)
 
+#define pi 3.1415926535898
 
 *init
 	screen 0, 800, 800, SCREEN_HIDE
