@@ -48,6 +48,9 @@
 	mcx = (ginfo_wx1+ginfo_wx2)/2
 	mcy = (ginfo_wy1+ginfo_wy2)/2
 	
+	ddim rot
+	rot = 0.0
+	
 	ddim fx, 8
 	ddim fy, 8
 	ddim fz, 8
@@ -58,6 +61,8 @@
 	ddim fp, 8
 	ddim fts, 8
 	ddim fps, 8
+	
+	
 	repeat 8
 		fxs(cnt) = double(rnd(21) - 10)/40
 		fys(cnt) = double(rnd(21) - 10)/40
@@ -77,7 +82,7 @@ repeat
 	gosub *render_game
 	gosub *draw_debug
 	redraw 1
-	await 66
+	await 50
 //	await 33+cnt\3/2
 //	await 200
 loop
@@ -185,5 +190,6 @@ return
 		
 	loop//*/
 	n3d_setCameraPosition 96.0 - cnt,6.0,12.0
-	n3d_setCameraAngleByLookingAt 0.0, 0.0, 0.0
+	rot += 0.01
+	n3d_setCameraAngleByLookingAt 0.0, 0.0, 0.0, rot
 	return
