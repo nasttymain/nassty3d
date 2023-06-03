@@ -2,7 +2,7 @@
 #include "libn3d.hsp"
 #include "mod_taggedlabel.hsp"
 #include "hspogg.as"
-#define FULLSCREEN 0
+#define FULLSCREEN 1
 
 #define JOYSTICK_PORT 0
 
@@ -137,6 +137,8 @@
 	ddim fps, 128
 	ddim fs, 128
 	dim flt, 128
+	
+	ddim rot
 	
 	dim airplane_speed
 	airplane_speed = 7
@@ -512,16 +514,17 @@ stop
 	}
 	//camtime += 1
 	if cammode = 0{
+		//rot += 0.01
 		if camtime = 20{
 			taglab_add 320, 200, "LET'S GO!", 30
 		}
 		if game_cameramode = 0{
 			n3d_setCameraPosition -48.0, 0.0 - x, -8.0 + z
-			n3d_setCameraAngleByLookingAt 0.0, -x, z
+			n3d_setCameraAngleByLookingAt 0.0, -x, z, rot
 		}
 		if game_cameramode = 1{
 			n3d_setCameraPosition 0.0, 0.0 - x, -4.0 + z
-			n3d_setCameraAngle 0.0, pi/2, 0.0
+			n3d_setCameraAngle 0.0, pi/2, rot
 		}
 	}
 	if cammode = 2{

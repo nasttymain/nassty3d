@@ -350,8 +350,8 @@
 						jydo12=ovx12*ydx+ovy12*ydy+ovz12*ydz
 						ivo12=(ovx12*nvx+ovy12*nvy+ovz12*nvz)
 						
-						dx12=double(rsizex)/2 + (jxdo12*povv*ovl12 * rscale)
-						dy12=double(rsizey)/2 + (jydo12*povv*ovl12 * rscale)
+						dx12=double(rsizex)/2 + (jxdo12*povv*ovl12 * rscale) * cos(c_sightr) - (jydo12*povv*ovl12 * rscale) * sin(c_sightr)
+						dy12=double(rsizey)/2 + (jxdo12*povv*ovl12 * rscale) * sin(c_sightr) + (jydo12*povv*ovl12 * rscale) * cos(c_sightr)
 						
 						
 						
@@ -375,8 +375,8 @@
 						jydo13=ovx13*ydx+ovy13*ydy+ovz13*ydz
 						ivo13=(ovx13*nvx+ovy13*nvy+ovz13*nvz)
 						
-						dx13=double(rsizex)/2 + (jxdo13*povv*ovl13 * rscale)
-						dy13=double(rsizey)/2 + (jydo13*povv*ovl13 * rscale)
+						dx13=double(rsizex)/2 + (jxdo13*povv*ovl13 * rscale) * cos(c_sightr) - (jydo13*povv*ovl13 * rscale) * sin(c_sightr)
+						dy13=double(rsizey)/2 + (jxdo13*povv*ovl13 * rscale) * sin(c_sightr) + (jydo13*povv*ovl13 * rscale) * cos(c_sightr)
 						
 						
 						
@@ -399,8 +399,8 @@
 						jydo23=ovx23*ydx+ovy23*ydy+ovz23*ydz
 						ivo23=(ovx23*nvx+ovy23*nvy+ovz23*nvz)
 						
-						dx23=double(rsizex)/2 + (jxdo23*povv*ovl23 * rscale)
-						dy23=double(rsizey)/2 + (jydo23*povv*ovl23 * rscale)
+						dx23=double(rsizex)/2 + (jxdo23*povv*ovl23 * rscale) * cos(c_sightr) - (jydo23*povv*ovl23 * rscale) * sin(c_sightr)
+						dy23=double(rsizey)/2 + (jxdo23*povv*ovl23 * rscale) * sin(c_sightr) + (jydo23*povv*ovl23 * rscale) * cos(c_sightr)
 						
 						//logmes "" + (pse1 / (pse1 + pse2)) + " " + (pse1 / (pse1 + pse3)) + " " + (pse2 / (pse2 + pse3)) // PASS
 						//logmes  "" + o_x12 + " " + o_x13 + " " + o_x23 // PASS
@@ -423,7 +423,7 @@
 							//logmes "+--"
 							trianglef dx1,dy1,dx12,dy12,dx13,dy13
 						}
-						/*
+						
 						//---------------------------------------------------------
 						if  SIGN(psd1) = -1 and SIGN(psd2) = 1 and SIGN(psd3) = -1 and tooclose12 = 0 and tooclose23 = 0{
 							onscreen_flag=1
