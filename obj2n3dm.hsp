@@ -1,7 +1,98 @@
 #packopt hide 1
 #runtime "hsp3cl"
-
+#packopt runtime "hsp3cl.hrt"
+#packopt name "obj2n3dm.exe"
 *init
 	sdim cmdline, 4096
 	cmdline = dir_cmdline
+	exist cmdline
+	if strsize = -1{
+		mes "Not found: " + cmdline
+		end
+	}
+	sdim srcfile, strsize + 1
+	bload cmdline, srcfile
 	
+	sdim outfile, 131072
+	outfile = ""
+	
+	sdim crlf, 3
+	poke crlf, 0, 13
+	poke crlf, 1, 10
+	sdim lf, 2
+	poke lf, 0, 10
+	sdim lflf, 3
+	poke lflf, 0, 10
+	poke lflf, 1, 10
+	strrep srcfile, lf, crlf
+	strrep srcfile, lflf, lf
+	
+	sdim textline, 4096
+	sdim elems, 256, 32
+	
+	
+	ddim vlist_x, 65536
+	ddim vlist_y, 65536
+	ddim vlist_z, 65536
+	dim vi
+	vi = 0
+	
+	dim vid, 32
+	
+	dim pg_color
+	pg_color = $808080
+	
+	notesel srcfile
+	repeat notemax
+		notesel srcfile
+		noteget textline, cnt
+		textline = strtrim(textline, 0, ' ')
+		strrep textline, "\t", " "
+		repeat 1
+			strrep textline, "  ", " "
+			if stat = 0{
+				break
+			}else{
+				continue 0
+			}
+		loop
+		if strmid(textline, 0, 1) = "#"{
+			continue
+		}
+		repeat length(elems)
+			elems(cnt) = ""
+		loop
+		split textline, " ", elems
+		if       elems(0) = "v"{
+			vlist_x(vi) = double(elems(1))
+			vlist_y(vi) = double(elems(2))
+			vlist_z(vi) = double(elems(3))
+			vi += 1
+		}else:if elems(0) = "f"{
+			vertex_count = 0
+			repeat 8
+				if elems(cnt + 1) = ""{
+					vertex_count = cnt
+					break
+				}
+			loop
+			if vertex_count = 0{
+				mes "vertex_count out of range"
+			}
+			repeat vertex_count
+				vid(cnt) = int(strmid(elems(cnt + 1), 0, instr(elems(cnt + 1), 0, "/"))) - 1
+			loop
+			repeat vertex_count - 2
+				outfile += "" + pg_color + " "
+				outfile += "" + vlist_x(vid(      0)) + " " + vlist_y(vid(      0)) + " " + vlist_z(vid(      0)) + " "
+				outfile += "" + vlist_x(vid(cnt + 1)) + " " + vlist_y(vid(cnt + 1)) + " " + vlist_z(vid(cnt + 1)) + " "
+				outfile += "" + vlist_x(vid(cnt + 2)) + " " + vlist_y(vid(cnt + 2)) + " " + vlist_z(vid(cnt + 2)) + " "
+				outfile += "\n"
+				//pg_color = (pg_color + $234567) \ $1000000
+			loop
+		}else{
+			mes "Unsupported type: " + elems(0)
+		}
+	loop
+	bsave getpath(cmdline, 1) + ".n3dm", outfile, strlen(outfile)
+end

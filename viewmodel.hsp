@@ -1,0 +1,155 @@
+#include "libn3d.hsp"
+#define pi 3.1415926535898
+*init
+	screen 0, 800, 800
+	n3d_initialize
+	
+	repeat 5,-2
+	xcnt=cnt*20
+	repeat 5,-2
+	ycnt=cnt*20
+	repeat 5,-2
+	zcnt=cnt*20
+		c = $FFFFFF
+		if xcnt = 0 and ycnt = 0 and zcnt = 0{
+			c = $FF0000
+		}
+		//xŒÅ’è(5,-5)
+		n3d_setpolygon 10, c, 2.0+xcnt,2.0+ycnt,2.0+zcnt    , 2.0+xcnt,-2.0+ycnt,2.0+zcnt  , 2.0+xcnt,2.0+ycnt,-2.0+zcnt
+		n3d_setpolygon 10, c, 2.0+xcnt,-2.0+ycnt,-2.0+zcnt  , 2.0+xcnt,-2.0+ycnt,2.0+zcnt  ,2.0+xcnt,2.0+ycnt,-2.0+zcnt
+		
+		n3d_setpolygon 10, c, -2.0+xcnt,2.0+ycnt,2.0+zcnt   , -2.0+xcnt,-2.0+ycnt,2.0+zcnt , -2.0+xcnt,2.0+ycnt,-2.0+zcnt
+		n3d_setpolygon 10, c, -2.0+xcnt,-2.0+ycnt,-2.0+zcnt , -2.0+xcnt,-2.0+ycnt,2.0+zcnt ,-2.0+xcnt,2.0+ycnt,-2.0+zcnt
+		
+		//yŒÅ’è(5,-5)
+		n3d_setpolygon 10, c/2, 2.0+xcnt,2.0+ycnt,2.0+zcnt    , -2.0+xcnt,2.0+ycnt,2.0+zcnt  , 2.0+xcnt,2.0+ycnt,-2.0+zcnt
+		n3d_setpolygon 10, c/2, -2.0+xcnt,2.0+ycnt,-2.0+zcnt  , -2.0+xcnt,2.0+ycnt,2.0+zcnt  ,2.0+xcnt,2.0+ycnt,-2.0+zcnt
+		
+		n3d_setpolygon 10, c/2, 2.0+xcnt,-2.0+ycnt,2.0+zcnt   , -2.0+xcnt,-2.0+ycnt,2.0+zcnt , 2.0+xcnt,-2.0+ycnt,-2.0+zcnt
+		n3d_setpolygon 10, c/2, -2.0+xcnt,-2.0+ycnt,-2.0+zcnt , -2.0+xcnt,-2.0+ycnt,2.0+zcnt ,2.0+xcnt,-2.0+ycnt,-2.0+zcnt
+		
+		//zŒÅ’è(5,-5)
+		n3d_setpolygon 10, c/4, 2.0+xcnt,2.0+ycnt,2.0+zcnt    , -2.0+xcnt,2.0+ycnt,2.0+zcnt  , 2.0+xcnt,-2.0+ycnt,2.0+zcnt
+		n3d_setpolygon 10, c/4, -2.0+xcnt,-2.0+ycnt,2.0+zcnt  , -2.0+xcnt,2.0+ycnt,2.0+zcnt    ,2.0+xcnt,-2.0+ycnt,2.0+zcnt
+		
+		n3d_setpolygon 10, c/4, 2.0+xcnt,2.0+ycnt,-2.0+zcnt   , -2.0+xcnt,2.0+ycnt,-2.0+zcnt , 2.0+xcnt,-2.0+ycnt,-2.0+zcnt
+		n3d_setpolygon 10, c/4, -2.0+xcnt,-2.0+ycnt,-2.0+zcnt , -2.0+xcnt,2.0+ycnt,-2.0+zcnt ,2.0+xcnt,-2.0+ycnt,-2.0+zcnt
+	loop
+	loop
+	loop
+//*/
+//	n3d_setpolygon 10, $FFFFFF, 5.0, 0.0, 0.0, 0.0, 4.33, 0.0, 0.0, -4.33, 0.0
+	
+	n3d_setCameraPosition 12.0,12.0,-6.0
+	n3d_setCameraAngle pi * 5/4, pi/3 , 0.0
+	await 500
+	gsel 0
+	mouse (ginfo_wx1+ginfo_wx2)/2,(ginfo_wy1+ginfo_wy2)/2 , -1
+	mcx = (ginfo_wx1+ginfo_wx2)/2
+	mcy = (ginfo_wy1+ginfo_wy2)/2
+	
+	ddim rot
+	rot = 0.0
+	
+	ddim fx, 8
+	ddim fy, 8
+	ddim fz, 8
+	ddim fxs, 8
+	ddim fys, 8
+	ddim fzs, 8
+	ddim ft, 8
+	ddim fp, 8
+	ddim fts, 8
+	ddim fps, 8
+	
+	
+	repeat 8
+		fxs(cnt) = double(rnd(21) - 10)/40
+		fys(cnt) = double(rnd(21) - 10)/40
+		fzs(cnt) = double(rnd(21) - 10)/40
+		fts(cnt) = double(rnd(11) - 5) / 100
+		fps(cnt) = double(rnd(11) - 5) / 100
+	loop
+*main
+repeat
+	redraw 0
+	color 0,0,0
+	boxf
+	color 255,255,255
+	gosub *proc_keymouse
+	gosub *proc_collision
+	gosub *proc_test
+	gosub *render_game
+	gosub *draw_debug
+	redraw 1
+	await 50
+//	await 33+cnt\3/2
+//	await 200
+loop
+stop
+
+*proc_keymouse
+	stick ky,16+16384+32768+65536+131072
+	newp=CAMERA_PHI-double(ginfo_mx-mcx)/500
+	newt=CAMERA_THETA-double(ginfo_my-mcy)/500
+	if ginfo_act=0{
+		if CAMERA_THETA-double(ginfo_my-mcy)/500<0.0{
+			newt=0.0
+		}else:if CAMERA_THETA-double(ginfo_my-mcy)/500>pi{
+			newt=pi
+		}else{
+		}
+		n3d_setCameraAngle newp,newt,0.0
+		mouse (ginfo_wx1+ginfo_wx2)/2,(ginfo_wy1+ginfo_wy2)/2 , 1
+	}
+	movespeed=1.0
+	if (ky&16384) * (ky&32768){
+		movespeed=1.0/sqrt(2)
+	}
+	if (ky&65536) * (ky&131072){
+		movespeed=1.0/sqrt(2)
+	}
+	if (ky&16384) * (ky&32768){
+		movespeed=1.0/sqrt(2)
+	}
+	if (ky&65536) * (ky&131072){
+		movespeed=1.0/sqrt(2)
+	}
+	
+	
+	if ky&16384{
+		n3d_moveCameraPositionVerticallyByAngle movespeed, CAMERA_PHI+pi/2, CAMERA_THETA
+	}
+	if ky&32768{
+		n3d_moveCameraPositionByAngle movespeed, CAMERA_PHI, CAMERA_THETA
+	}
+	if ky&65536{
+		n3d_moveCameraPositionVerticallyByAngle -movespeed, CAMERA_PHI+pi/2, CAMERA_THETA
+	}
+	if ky&131072{
+		n3d_moveCameraPositionByAngle -movespeed, CAMERA_PHI, CAMERA_THETA
+	}
+	return
+
+*render_game
+	n3d_render
+	pos 0,0
+//	gzoom 640, 480, 0, 0, 0, 320, 240, 0
+	/*color 0,0,0
+	boxf 0,0,640,64
+	boxf 0,416,640,480
+	boxf 0,0,64,480
+	boxf 576,0,640,480*/
+	return
+*draw_debug
+	n3d_renderinfo
+	return
+*proc_collision
+	/*if (absf(CAMERA_XPOS)\20<2.0 | absf(CAMERA_XPOS)\20>18.0) & (absf(CAMERA_YPOS)\20<2.0 | absf(CAMERA_YPOS)\20>18.0) & (absf(CAMERA_ZPOS)\20<2.0 | absf(CAMERA_ZPOS)\20>18.0){
+		dialog "”’‚¢ŽlŠp‚É“–‚Á‚Ä‚µ‚Ü‚¢‚Ü‚µ‚½"
+		stop
+	}*/
+return
+
+*proc_test
+	return

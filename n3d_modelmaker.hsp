@@ -1,6 +1,6 @@
 #include "libn3d.hsp"
 #include "hspext.as"
-
+#define pi 3.1415926535898
 *init
 	screen 0
 	n3d_initialize
