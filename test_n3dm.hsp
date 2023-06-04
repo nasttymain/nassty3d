@@ -2,7 +2,7 @@
 #include "libn3d.hsp"
 #include "mod_taggedlabel.hsp"
 #include "hspogg.as"
-#define FULLSCREEN 1
+#define FULLSCREEN 0
 
 #define JOYSTICK_PORT 0
 

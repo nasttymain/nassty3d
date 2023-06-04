@@ -1,0 +1,7 @@
+#packopt hide 1
+#runtime "hsp3cl"
+
+*init
+	sdim cmdline, 4096
+	cmdline = dir_cmdline
+	
