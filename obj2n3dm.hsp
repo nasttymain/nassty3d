@@ -70,6 +70,9 @@
 			//mes "V(" + vi + ") : " + vlist_x(vi) + " " + vlist_y(vi) + " " + vlist_z(vi)
 			vi += 1
 		}else:if elems(0) = "f"{
+			repeat length(vid)
+				vid(cnt) = 0
+			loop
 			vertex_count = 0
 			repeat 8
 				if elems(cnt + 1) = ""{
@@ -85,7 +88,7 @@
 				if instr(elems(cnt + 1), 0, "/") != -1{
 					vid(cnt) = int(strmid(elems(cnt + 1), 0, instr(elems(cnt + 1), 0, "/"))) - 1
 				}else{
-					vid(cnt) = int(elems(cnt + 1))
+					vid(cnt) = int(elems(cnt + 1)) - 1
 				}
 				if vid(cnt) < 0{
 					vid(cnt) = vi + vid(cnt)

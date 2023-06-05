@@ -39,7 +39,7 @@
 	dim doreflag
 	dim doreprev
 	
-	sdim exportbuf,65536
+	sdim exportbuf,1048576
 	
 	sdim filename,8192
 	filename="export.n3dm
