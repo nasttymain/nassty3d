@@ -11,3 +11,5 @@ start.ax
 release/**
 release/*
 *.exe
+private/**
+private/*
